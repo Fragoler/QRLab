@@ -9,6 +9,81 @@ namespace QRLab.Test;
 
 public sealed class MutationTests
 {
+    [Theory]
+    [InlineData(OcclusionShape.Rectangle)]
+    [InlineData(OcclusionShape.Ellipse)]
+    public void OcclusionPaintsShapeAndPreservesSource(OcclusionShape shape)
+    {
+        var source = Image(100, canvas => canvas.Clear(SKColors.White));
+        var before = source.Data.ToArray();
+        var result = new OcclusionMutation().Apply(source, new OcclusionOptions
+        {
+            Shape = shape, Width = 60, Height = 60, Color = "#123456"
+        });
+        using var pixels = Decode(result);
+        Assert.Equal(new SKColor(0x12, 0x34, 0x56), pixels.GetPixel(50, 50));
+        Assert.Equal(SKColors.White, pixels.GetPixel(5, 5));
+        Assert.Equal(shape == OcclusionShape.Rectangle ? new SKColor(0x12, 0x34, 0x56) : SKColors.White, pixels.GetPixel(22, 22));
+        Assert.Equal(source.Width, result.Width); Assert.Equal(source.Height, result.Height);
+        Assert.Equal(before, source.Data.ToArray());
+    }
+
+    [Fact]
+    public void OcclusionHonorsPositionRotationClippingAndZeroSize()
+    {
+        var source = Image(100, canvas => canvas.Clear(SKColors.White));
+        var mutation = new OcclusionMutation();
+        var options = new OcclusionOptions { CenterX = 25, CenterY = 50, Width = 40, Height = 10 };
+        using var normal = Decode(mutation.Apply(source, options));
+        using var rotated = Decode(mutation.Apply(source, options with { Angle = 90 }));
+        Assert.Equal(SKColors.Gray, normal.GetPixel(40, 50));
+        Assert.Equal(SKColors.White, rotated.GetPixel(40, 50));
+        Assert.Equal(SKColors.Gray, rotated.GetPixel(25, 65));
+        using var clipped = Decode(mutation.Apply(source, options with { CenterX = 0 }));
+        Assert.Equal(SKColors.Gray, clipped.GetPixel(0, 50));
+        Assert.Equal(SKColors.White, clipped.GetPixel(25, 50));
+        Assert.Same(source, mutation.Apply(source, options with { Width = 0 }));
+    }
+
+    [Fact]
+    public void OcclusionRejectsInvalidParameters()
+    {
+        var defaults = new OcclusionOptions();
+        foreach (var options in new[]
+        {
+            defaults with { Color = "red" }, defaults with { Color = "#GG8080" },
+            defaults with { Color = "#80808080" }, defaults with { CenterX = double.NaN },
+            defaults with { CenterY = 101 }, defaults with { Width = -1 },
+            defaults with { Height = double.PositiveInfinity }, defaults with { Angle = 181 },
+            defaults with { Shape = (OcclusionShape)99 }
+        }) Assert.Throws<ArgumentException>(options.Validate);
+    }
+
+    [Fact]
+    public void OcclusionEditorRebuildsChainAndPreservesLastValidColor()
+    {
+        var editor = TestApplicationFactory.CreateMainWindow().Mutations;
+        editor.AddCommand.Execute(MutationKind.Occlusion);
+        Assert.True(editor.IsOcclusion);
+        var first = editor.Operations[0];
+        editor.AddCommand.Execute(MutationKind.GaussianBlur);
+        var last = editor.Operations[1];
+        editor.SelectedOperation = first;
+        editor.AreaCenterX = 20;
+        editor.AreaShape = OcclusionShape.Ellipse;
+        Assert.NotSame(last.Image, editor.Operations[1].Image);
+        Assert.Equal(20, Assert.IsType<OcclusionOptions>(editor.Operations[0].Options).CenterX);
+        var valid = editor.PreviewImage;
+        editor.AreaColor = "#";
+        Assert.Same(valid, editor.PreviewImage);
+        Assert.True(editor.Workspace.HasError);
+        editor.AreaColor = "FF0000";
+        Assert.Equal("FF0000", Assert.IsType<OcclusionOptions>(editor.SelectedOperation!.Options).Color);
+        editor.UndoCommand.Execute(null);
+        editor.RedoCommand.Execute(null);
+        Assert.Equal(2, editor.Operations.Count);
+    }
+
     [Fact]
     public void GaussianBlurSpreadsAnImpulseWithoutChangingOriginal()
     {
