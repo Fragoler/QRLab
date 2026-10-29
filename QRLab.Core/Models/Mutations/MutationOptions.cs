@@ -6,6 +6,7 @@ namespace QRLab.Core.Models.Mutations;
 [JsonDerivedType(typeof(GaussianBlurOptions), "gaussian")]
 [JsonDerivedType(typeof(SaltAndPepperOptions), "salt-and-pepper")]
 [JsonDerivedType(typeof(PerspectiveMutationOptions), "perspective")]
+[JsonDerivedType(typeof(OcclusionOptions), "occlusion")]
 public abstract record MutationOptions
 {
     [JsonIgnore] public abstract MutationKind Kind { get; }

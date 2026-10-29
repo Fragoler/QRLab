@@ -20,7 +20,13 @@ public sealed class App : Application
             desktop.MainWindow = new MainWindow
             {
                 DataContext = new MainWindowViewModel(new CodeGenerator(), new SampleSetStorage(),
-                    new MutationProcessor([new GaussianBlurMutation(), new SaltAndPepperMutation(), new PerspectiveMutation()]),
+                    new MutationProcessor(
+                        [
+                            new GaussianBlurMutation(), 
+                            new SaltAndPepperMutation(), 
+                            new PerspectiveMutation(), 
+                            new OcclusionMutation()
+                        ]),
                     new ZxingCodeRecognizer(), new CsvRecognitionReportExporter())
             };
         base.OnFrameworkInitializationCompleted();

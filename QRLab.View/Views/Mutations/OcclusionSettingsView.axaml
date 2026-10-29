@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:QRLab.View.ViewModels" xmlns:local="using:QRLab.View.Views.Mutations"
+             xmlns:p="using:QRLab.View.Presentation" x:Class="QRLab.View.Views.Mutations.OcclusionSettingsView"
+             x:DataType="vm:MutationsViewModel">
+  <StackPanel Spacing="6">
+    <TextBlock Text="Форма области" Classes="label"/>
+    <ComboBox ItemsSource="{Binding OcclusionShapes}" SelectedValue="{Binding AreaShape, Mode=TwoWay}"
+              SelectedValueBinding="{Binding Value, DataType=p:EnumOption}" HorizontalAlignment="Stretch">
+      <ComboBox.ItemTemplate><DataTemplate x:DataType="p:EnumOption"><TextBlock Text="{Binding Name}"/></DataTemplate></ComboBox.ItemTemplate>
+    </ComboBox>
+    <TextBlock Text="Цвет, HEX (#RRGGBB)" Classes="label"/>
+    <TextBox Text="{Binding AreaColor, Mode=TwoWay}" Watermark="#808080"/>
+    <local:NumericMutationParameter Label="Центр X, %" Value="{Binding AreaCenterX, Mode=TwoWay}" Minimum="0" Maximum="100"/>
+    <local:NumericMutationParameter Label="Центр Y, %" Value="{Binding AreaCenterY, Mode=TwoWay}" Minimum="0" Maximum="100"/>
+    <local:NumericMutationParameter Label="Ширина, %" Value="{Binding AreaWidth, Mode=TwoWay}" Minimum="0" Maximum="100"/>
+    <local:NumericMutationParameter Label="Высота, %" Value="{Binding AreaHeight, Mode=TwoWay}" Minimum="0" Maximum="100"/>
+    <local:NumericMutationParameter Label="Наклон, °" Value="{Binding AreaAngle, Mode=TwoWay}" Minimum="-180" Maximum="180"/>
+  </StackPanel>
+</UserControl>
