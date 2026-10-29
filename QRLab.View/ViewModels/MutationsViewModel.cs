@@ -15,6 +15,14 @@ public sealed partial class MutationsViewModel : ScreenViewModel
     private readonly Stack<OperationViewModel> _undone = new();
     public Workspace.WorkspaceViewModel Workspace { get; }
     public IReadOnlyList<EnumOption<ImageInterpolation>> Interpolations => MutationChoices.Interpolations;
+    public IReadOnlyList<EnumOption<OcclusionShape>> OcclusionShapes => MutationChoices.OcclusionShapes;
+    [ObservableProperty] private OcclusionShape _areaShape = OcclusionShape.Rectangle;
+    [ObservableProperty] private string _areaColor = "#808080";
+    [ObservableProperty] private double _areaCenterX = 50;
+    [ObservableProperty] private double _areaCenterY = 50;
+    [ObservableProperty] private double _areaWidth = 25;
+    [ObservableProperty] private double _areaHeight = 25;
+    [ObservableProperty] private double _areaAngle;
     [ObservableProperty] private double _angleX = MutationDefaults.AngleX;
     [ObservableProperty] private double _angleY = MutationDefaults.AngleY;
     [ObservableProperty] private double _distance = MutationDefaults.Distance;
@@ -38,6 +46,7 @@ public sealed partial class MutationsViewModel : ScreenViewModel
     public bool IsSaltAndPepper => SelectedOperation?.Options is SaltAndPepperOptions;
     public bool IsBlur => SelectedOperation?.Options is GaussianBlurOptions;
     public bool IsPerspective => SelectedOperation?.Options is PerspectiveMutationOptions;
+    public bool IsOcclusion => SelectedOperation?.Options is OcclusionOptions;
     public bool CanUndo => Operations.Count > 0;
     public bool CanRedo => _undone.Count > 0;
 
@@ -56,6 +65,13 @@ public sealed partial class MutationsViewModel : ScreenViewModel
     }
 
     partial void OnAngleXChanged(double value) => UpdatePreview();
+    partial void OnAreaShapeChanged(OcclusionShape value) => UpdatePreview();
+    partial void OnAreaColorChanged(string value) => UpdatePreview();
+    partial void OnAreaCenterXChanged(double value) => UpdatePreview();
+    partial void OnAreaCenterYChanged(double value) => UpdatePreview();
+    partial void OnAreaWidthChanged(double value) => UpdatePreview();
+    partial void OnAreaHeightChanged(double value) => UpdatePreview();
+    partial void OnAreaAngleChanged(double value) => UpdatePreview();
     partial void OnAngleYChanged(double value) => UpdatePreview();
     partial void OnDistanceChanged(double value) => UpdatePreview();
     partial void OnNoiseDensityChanged(double value) => UpdatePreview();
@@ -67,6 +83,11 @@ public sealed partial class MutationsViewModel : ScreenViewModel
     private MutationOptions CurrentOptions(MutationKind kind) => kind switch
     {
         MutationKind.GaussianBlur => new GaussianBlurOptions { Sigma = Blur },
+        MutationKind.Occlusion => new OcclusionOptions
+        {
+            Shape = AreaShape, Color = AreaColor, CenterX = AreaCenterX, CenterY = AreaCenterY,
+            Width = AreaWidth, Height = AreaHeight, Angle = AreaAngle
+        },
         MutationKind.SaltAndPepper => new SaltAndPepperOptions
         {
             DensityPercent = NoiseDensity, SaltPercent = SaltPercent, Seed = checked((int)(Seed ?? MutationDefaults.Seed))
@@ -89,6 +110,7 @@ public sealed partial class MutationsViewModel : ScreenViewModel
         {
             chain[index] = CurrentOptions(options.Kind);
             var frames = Workspace.Mutate(sample.OriginalImage, chain);
+            Workspace.Error = "";
             _loading = true;
             try
             {
@@ -110,6 +132,9 @@ public sealed partial class MutationsViewModel : ScreenViewModel
         _loading = true;
         switch (value?.Options)
         {
+            case OcclusionOptions area:
+                AreaShape = area.Shape; AreaColor = area.Color; AreaCenterX = area.CenterX; AreaCenterY = area.CenterY;
+                AreaWidth = area.Width; AreaHeight = area.Height; AreaAngle = area.Angle; break;
             case GaussianBlurOptions blur: Blur = blur.Sigma; break;
             case SaltAndPepperOptions noise:
                 NoiseDensity = noise.DensityPercent; SaltPercent = noise.SaltPercent; Seed = noise.Seed; break;
@@ -117,7 +142,7 @@ public sealed partial class MutationsViewModel : ScreenViewModel
                 AngleX = perspective.AngleX; AngleY = perspective.AngleY; Distance = perspective.Distance; Interpolation = perspective.Interpolation; break;
         }
         _loading = false;
-        foreach (var name in new[] { nameof(SelectedFrame), nameof(PreviewImage), nameof(IsBlur), nameof(IsSaltAndPepper), nameof(IsPerspective) })
+        foreach (var name in new[] { nameof(SelectedFrame), nameof(PreviewImage), nameof(IsBlur), nameof(IsSaltAndPepper), nameof(IsPerspective), nameof(IsOcclusion) })
             OnPropertyChanged(name);
     }
 
