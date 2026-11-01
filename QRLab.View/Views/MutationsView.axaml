@@ -2,10 +2,10 @@
               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
               xmlns:vm="using:QRLab.View.ViewModels"
               xmlns:c="using:QRLab.View.Controls"
-              xmlns:p="using:QRLab.View.Presentation"
               xmlns:icons="using:QRLab.View.Controls"
               xmlns:settings="using:QRLab.View.Views.Mutations"
               xmlns:mutations="clr-namespace:QRLab.View.ViewModels.Mutations"
+              xmlns:common="clr-namespace:QRLab.View.ViewModels.Common"
               x:Class="QRLab.View.Views.MutationsView"
               x:DataType="vm:MutationsViewModel">
   <Grid Margin="18" RowDefinitions="Auto,*">
@@ -27,7 +27,7 @@
           <StackPanel Margin="14" Spacing="12">
             <ItemsControl ItemsSource="{Binding AvailableMutations}">
               <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="p:EnumOption">
+                <DataTemplate x:DataType="common:EnumOption">
                   <Button Command="{ReflectionBinding $parent[UserControl].DataContext.AddCommand}" CommandParameter="{Binding Value}"
                           HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,0,0,8">
                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">

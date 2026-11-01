@@ -1,3 +1,3 @@
-namespace QRLab.View.Presentation.Mutations;
+namespace QRLab.View.ViewModels.Mutations;
 
 public sealed record FrameLabel(string Name, string Description);

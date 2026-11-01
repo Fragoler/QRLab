@@ -1,6 +1,7 @@
 using QRLab.Core.Models.Recognition;
+using QRLab.View.ViewModels.Common;
 
-namespace QRLab.View.Presentation.Recognition;
+namespace QRLab.View.ViewModels.Reading;
 
 public static class RecognitionChoices
 {

@@ -19,14 +19,13 @@ public sealed class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(new CodeGenerator(), new SampleSetStorage(),
-                    new MutationProcessor(
-                        [
-                            new GaussianBlurMutation(), 
-                            new SaltAndPepperMutation(), 
-                            new PerspectiveMutation(), 
-                            new OcclusionMutation()
-                        ]),
+                DataContext = ApplicationViewModels.Create(new CodeGenerator(), new SampleSetStorage(),
+                    [
+                        new GaussianBlurMutation(),
+                        new SaltAndPepperMutation(),
+                        new PerspectiveMutation(),
+                        new OcclusionMutation()
+                    ],
                     new ZxingCodeRecognizer(), new CsvRecognitionReportExporter())
             };
         base.OnFrameworkInitializationCompleted();

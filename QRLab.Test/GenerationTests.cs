@@ -69,10 +69,16 @@ public sealed class GenerationTests : IDisposable
     [Fact]
     public void InvalidBatchLeavesPreviousSetAndSelectionIntact()
     {
-        var workspace = TestApplicationFactory.CreateWorkspace();
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        var workspace = vm.Workspace;
         var selected = workspace.SelectedSample;
         var originals = workspace.Samples.ToArray();
-        Assert.False(workspace.Generate(new Ean13GenerationOptions { Template = "00000000{num}", FirstNumber = 9999, Count = 2 }));
+        vm.Generation.Settings.Format = CodeKind.Barcode;
+        vm.Generation.Settings.Barcode.Type = BarcodeType.Ean13;
+        vm.Generation.Settings.Template = "00000000{num}";
+        vm.Generation.Settings.FirstNumber = 9999;
+        vm.Generation.Settings.Count = 2;
+        vm.Generation.GenerateCommand.Execute(null);
         Assert.Equal(originals, workspace.Samples);
         Assert.Same(selected, workspace.SelectedSample);
         Assert.True(workspace.HasError);
@@ -109,8 +115,8 @@ public sealed class GenerationTests : IDisposable
         vm.Generation.LoadDirectory = folder;
         vm.Generation.LoadFolderCommand.Execute(null);
         Assert.Equal("Мой набор", vm.Workspace.SetName);
-        Assert.Equal(3, vm.Generation.QrVersion);
-        Assert.Equal(512, vm.Generation.ImageWidth);
+        Assert.Equal(3, vm.Generation.Settings.Qr.Version);
+        Assert.Equal(512, vm.Generation.Settings.ImageWidth);
         Assert.Equal("SET-0012", vm.Workspace.SelectedSample!.Content);
         Assert.Equal(frames[^1].Image.Data.ToArray(), vm.Workspace.SelectedSample.Image.Data.ToArray());
         Assert.Equal(4, vm.Mutations.Operations.Count);
@@ -134,8 +140,8 @@ public sealed class GenerationTests : IDisposable
         vm.Generation.LoadDirectory = folder;
         vm.Generation.LoadFolderCommand.Execute(null);
         Assert.False(vm.Workspace.HasError);
-        Assert.Equal(CodeKind.Barcode, vm.Generation.Format);
-        Assert.Equal(type, vm.Generation.BarcodeType);
+        Assert.Equal(CodeKind.Barcode, vm.Generation.Settings.Format);
+        Assert.Equal(type, vm.Generation.Settings.Barcode.Type);
         Assert.Equal(settings, vm.Workspace.SelectedSample!.Preview.Settings);
     }
 
@@ -144,15 +150,15 @@ public sealed class GenerationTests : IDisposable
     {
         var vm = TestApplicationFactory.CreateMainWindow();
         var defaults = new QrGenerationOptions();
-        Assert.Equal(defaults.Template, vm.Generation.Template);
-        Assert.Equal(defaults.Count, vm.Generation.Count);
-        Assert.Equal(defaults.Width, vm.Generation.ImageWidth);
-        Assert.Equal(defaults.Correction, vm.Generation.Correction);
-        vm.Generation.Source = ContentSource.Text;
-        vm.Generation.Mode = GenerationMode.Single;
+        Assert.Equal(defaults.Template, vm.Generation.Settings.Template);
+        Assert.Equal(defaults.Count, vm.Generation.Settings.Count);
+        Assert.Equal(defaults.Width, vm.Generation.Settings.ImageWidth);
+        Assert.Equal(defaults.Correction, vm.Generation.Settings.Qr.Correction);
+        vm.Generation.Settings.Source = ContentSource.Text;
+        vm.Generation.Settings.Mode = GenerationMode.Single;
         vm.Generation.GenerateCommand.Execute(null);
         Assert.Equal(defaults.Template, Assert.Single(vm.Workspace.Samples).Content);
-        vm.Generation.ImageWidth = null;
+        vm.Generation.Settings.ImageWidth = null;
         var previous = vm.Workspace.SelectedSample;
         vm.Generation.GenerateCommand.Execute(null);
         Assert.Same(previous, vm.Workspace.SelectedSample);
@@ -162,27 +168,39 @@ public sealed class GenerationTests : IDisposable
     [Fact]
     public async Task SavingUsesFolderNameAndNeverOverwritesExistingFiles()
     {
-        var workspace = TestApplicationFactory.CreateWorkspace();
-        workspace.Generate(new QrGenerationOptions { Template = "saved", Count = 1, Width = 256, Height = 256 });
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        var workspace = vm.Workspace;
+        vm.Generation.Settings.ApplyOptions(new QrGenerationOptions { Template = "saved", Count = 1, Width = 256, Height = 256 }, 1);
+        vm.Generation.GenerateCommand.Execute(null);
         var folder = Path.Combine(_root, "Набор 42");
-        Assert.True(await workspace.ExportAsync(new(folder)));
+        vm.Generation.ExportDestination = folder;
+        await vm.Generation.ConfirmExportCommand.ExecuteAsync(null);
+        Assert.False(workspace.HasError);
         Assert.Equal("Набор 42", workspace.SetName);
         var manifest = File.ReadAllText(Path.Combine(folder, SampleSetStorage.ManifestName));
-        Assert.False(await workspace.ExportAsync(new(folder)));
+        await vm.Generation.ConfirmExportCommand.ExecuteAsync(null);
+        Assert.True(workspace.HasError);
         Assert.Equal(manifest, File.ReadAllText(Path.Combine(folder, SampleSetStorage.ManifestName)));
     }
 
     [Fact]
     public void CorruptMissingAndOldSetsDoNotReplaceCurrentSamples()
     {
-        var workspace = TestApplicationFactory.CreateWorkspace();
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        var workspace = vm.Workspace;
         var selected = workspace.SelectedSample;
         Directory.CreateDirectory(_root);
-        Assert.Null(workspace.LoadFolder(_root));
+        vm.Generation.LoadDirectory = _root;
+        vm.Generation.LoadFolderCommand.Execute(null);
+        Assert.True(workspace.HasError);
         File.WriteAllText(Path.Combine(_root, SampleSetStorage.ManifestName), "{broken");
-        Assert.Null(workspace.LoadFolder(_root));
+        vm.Generation.LoadDirectory = _root;
+        vm.Generation.LoadFolderCommand.Execute(null);
+        Assert.True(workspace.HasError);
         File.WriteAllText(Path.Combine(_root, SampleSetStorage.ManifestName), """{"Version":2,"Samples":[]}""");
-        Assert.Null(workspace.LoadFolder(_root));
+        vm.Generation.LoadDirectory = _root;
+        vm.Generation.LoadFolderCommand.Execute(null);
+        Assert.True(workspace.HasError);
         Assert.Same(selected, workspace.SelectedSample);
         Assert.Equal(GenerationDefaults.Count, workspace.Samples.Count);
         Assert.True(workspace.HasError);

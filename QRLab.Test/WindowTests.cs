@@ -1,4 +1,3 @@
-using QRLab.View.Presentation.Recognition;
 using Avalonia.Input;
 using QRLab.Core.Models.Mutations;
 using QRLab.Test.Fixtures;
@@ -15,6 +14,7 @@ using Avalonia.VisualTree;
 using QRLab.Core.Models.Generation.Barcode;
 using QRLab.View;
 using QRLab.View.ViewModels;
+using QRLab.View.ViewModels.Reading;
 using QRLab.View.Views;
 using Xunit;
 [assembly: AvaloniaTestApplication(typeof(QRLab.Test.TestAppBuilder))]
@@ -106,30 +106,30 @@ public sealed class WindowTests
             window.Show();
             Dispatcher.UIThread.RunJobs();
             var formatList = window.GetVisualDescendants().OfType<ListBox>()
-                .Single(list => ReferenceEquals(list.ItemsSource, vm.Generation.Formats));
-            formatList.SelectedItem = vm.Generation.Formats.Single(option => option.Id == CodeKind.Barcode);
+                .Single(list => ReferenceEquals(list.ItemsSource, vm.Generation.Settings.Formats));
+            formatList.SelectedItem = vm.Generation.Settings.Formats.Single(option => option.Id == CodeKind.Barcode);
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(CodeKind.Barcode, vm.Generation.Format);
+            Assert.Equal(CodeKind.Barcode, vm.Generation.Settings.Format);
 
             var barcodeCombo = window.GetVisualDescendants().OfType<ComboBox>()
-                .Single(combo => ReferenceEquals(combo.ItemsSource, vm.Generation.BarcodeTypes));
-            barcodeCombo.SelectedItem = vm.Generation.BarcodeTypes.Single(option => option.Id == BarcodeType.Ean13);
+                .Single(combo => ReferenceEquals(combo.ItemsSource, vm.Generation.Settings.Barcode.Types));
+            barcodeCombo.SelectedItem = vm.Generation.Settings.Barcode.Types.Single(option => option.Id == BarcodeType.Ean13);
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(BarcodeType.Ean13, vm.Generation.BarcodeType);
-            Assert.True(vm.Generation.IsEan13);
+            Assert.Equal(BarcodeType.Ean13, vm.Generation.Settings.Barcode.Type);
+            Assert.True(vm.Generation.Settings.Barcode.IsEan13);
 
-            vm.Generation.Format = CodeKind.QrCode;
+            vm.Generation.Settings.Format = CodeKind.QrCode;
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(CodeKind.QrCode, formatList.SelectedValue);
 
             var sourceCombo = window.GetVisualDescendants().OfType<ComboBox>()
-                .Single(combo => ReferenceEquals(combo.ItemsSource, vm.Generation.Sources));
-            sourceCombo.SelectedItem = vm.Generation.Sources.Single(option => option.Id == ContentSource.Text);
+                .Single(combo => ReferenceEquals(combo.ItemsSource, vm.Generation.Settings.Sources));
+            sourceCombo.SelectedItem = vm.Generation.Settings.Sources.Single(option => option.Id == ContentSource.Text);
             Dispatcher.UIThread.RunJobs();
-            vm.Generation.Mode = GenerationMode.Single;
-            vm.Generation.Template = "Literal-{num}";
+            vm.Generation.Settings.Mode = GenerationMode.Single;
+            vm.Generation.Settings.Template = "Literal-{num}";
             vm.Generation.GenerateCommand.Execute(null);
-            Assert.Equal(ContentSource.Text, vm.Generation.Source);
+            Assert.Equal(ContentSource.Text, vm.Generation.Settings.Source);
             Assert.Equal("Literal-{num}", Assert.Single(vm.Workspace.Samples).Content);
         }
         finally { window.Close(); }
@@ -139,7 +139,7 @@ public sealed class WindowTests
     public void EveryMainPreviewCanPanZoomAndResetWithoutEditingTheImage()
     {
         var vm = TestApplicationFactory.CreateMainWindow();
-        vm.Generation.Count = 3; vm.Generation.ImageWidth = 512; vm.Generation.ImageHeight = 384;
+        vm.Generation.Settings.Count = 3; vm.Generation.Settings.ImageWidth = 512; vm.Generation.Settings.ImageHeight = 384;
         vm.Generation.GenerateCommand.Execute(null);
         var window = new MainWindow { DataContext = vm };
         try
@@ -168,7 +168,7 @@ public sealed class WindowTests
     public void MutationSampleNumberAndArrowsStayInSync()
     {
         var vm = TestApplicationFactory.CreateMainWindow();
-        vm.Generation.Count = 3; vm.Generation.ImageWidth = 256; vm.Generation.ImageHeight = 256;
+        vm.Generation.Settings.Count = 3; vm.Generation.Settings.ImageWidth = 256; vm.Generation.Settings.ImageHeight = 256;
         vm.Generation.GenerateCommand.Execute(null);
         var window = new MainWindow { DataContext = vm };
         try
@@ -208,13 +208,13 @@ public sealed class WindowTests
             Assert.Same(vm.Mutations, vm.SelectedScreen);
             Assert.NotNull(vm.Workspace.SelectedSample);
             vm.Mutations.AddCommand.Execute(MutationKind.Perspective);
-            vm.Mutations.AngleX = 19;
+            vm.Mutations.Perspective.AngleX = 19;
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(19, Assert.IsType<PerspectiveMutationOptions>(vm.Mutations.Operations.Last().Options).AngleX);
             Assert.NotSame(vm.Workspace.SelectedSample!.OriginalImage, vm.Mutations.PreviewImage);
             vm.Mutations.AddCommand.Execute(MutationKind.GaussianBlur);
             var blurred = vm.Mutations.PreviewImage;
-            vm.Mutations.Blur = 3;
+            vm.Mutations.GaussianBlur.Sigma = 3;
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(3, Assert.IsType<GaussianBlurOptions>(vm.Mutations.SelectedOperation!.Options).Sigma);
             Assert.NotSame(blurred, vm.Mutations.PreviewImage);
@@ -228,15 +228,15 @@ public sealed class WindowTests
             vm.NavigateCommand.Execute("03");
             await vm.Reading.RunCommand.ExecuteAsync(null);
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(120, vm.Reading.ResultsChecked);
+            Assert.Equal(120, vm.Reading.Results.Checked);
             var selected = vm.Workspace.SelectedSample;
-            vm.Reading.Filter = RecognitionFilter.Failed; vm.Reading.Search = "no-match";
+            vm.Reading.Results.Filter = RecognitionFilter.Failed; vm.Reading.Results.Search = "no-match";
             Dispatcher.UIThread.RunJobs();
             Assert.Same(selected, vm.Workspace.SelectedSample);
             vm.NavigateCommand.Execute("01"); Dispatcher.UIThread.RunJobs();
             vm.Generation.OpenLibraryCommand.Execute(null); Dispatcher.UIThread.RunJobs();
             Assert.Contains(window.GetVisualDescendants().OfType<Button>(), b => b.Command == vm.Generation.LoadSetCommand);
-            vm.Generation.LoadSetCommand.Execute(vm.Workspace.LibrarySets[0]); Dispatcher.UIThread.RunJobs();
+            vm.Generation.LoadSetCommand.Execute(vm.Generation.LibrarySets[0]); Dispatcher.UIThread.RunJobs();
             Assert.Equal(12, vm.Workspace.Samples.Count);
             vm.Generation.ExportCommand.Execute(null); Dispatcher.UIThread.RunJobs();
             Assert.Contains(window.GetVisualDescendants().OfType<Button>(), b => b.Command == vm.Generation.ConfirmExportCommand);

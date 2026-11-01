@@ -64,20 +64,20 @@ public sealed class MutationTests
     {
         var editor = TestApplicationFactory.CreateMainWindow().Mutations;
         editor.AddCommand.Execute(MutationKind.Occlusion);
-        Assert.True(editor.IsOcclusion);
+        Assert.IsType<QRLab.View.ViewModels.Mutations.OcclusionSettingsViewModel>(editor.SelectedSettings);
         var first = editor.Operations[0];
         editor.AddCommand.Execute(MutationKind.GaussianBlur);
         var last = editor.Operations[1];
         editor.SelectedOperation = first;
-        editor.AreaCenterX = 20;
-        editor.AreaShape = OcclusionShape.Ellipse;
+        editor.Occlusion.CenterX = 20;
+        editor.Occlusion.Shape = OcclusionShape.Ellipse;
         Assert.NotSame(last.Image, editor.Operations[1].Image);
         Assert.Equal(20, Assert.IsType<OcclusionOptions>(editor.Operations[0].Options).CenterX);
         var valid = editor.PreviewImage;
-        editor.AreaColor = "#";
+        editor.Occlusion.Color = "#";
         Assert.Same(valid, editor.PreviewImage);
         Assert.True(editor.Workspace.HasError);
-        editor.AreaColor = "FF0000";
+        editor.Occlusion.Color = "FF0000";
         Assert.Equal("FF0000", Assert.IsType<OcclusionOptions>(editor.SelectedOperation!.Options).Color);
         editor.UndoCommand.Execute(null);
         editor.RedoCommand.Execute(null);
@@ -184,8 +184,8 @@ public sealed class MutationTests
     public void EditingEarlierFrameRebuildsActualNoiseAndResetKeepsOriginal()
     {
         var vm = TestApplicationFactory.CreateMainWindow();
-        vm.Generation.Mode = QRLab.Core.Models.Generation.GenerationMode.Single;
-        vm.Generation.ImageWidth = 256; vm.Generation.ImageHeight = 256;
+        vm.Generation.Settings.Mode = QRLab.Core.Models.Generation.GenerationMode.Single;
+        vm.Generation.Settings.ImageWidth = 256; vm.Generation.Settings.ImageHeight = 256;
         vm.Generation.GenerateCommand.Execute(null);
         var sample = vm.Workspace.SelectedSample!;
         var original = sample.OriginalImage.Data.ToArray();
@@ -194,7 +194,7 @@ public sealed class MutationTests
         editor.AddCommand.Execute(MutationKind.SaltAndPepper);
         var before = sample.Image;
         editor.SelectedOperation = editor.Operations[0];
-        editor.Blur = 4;
+        editor.GaussianBlur.Sigma = 4;
         Assert.NotSame(before, sample.Image);
         Assert.NotSame(editor.Operations[0].Image, editor.Operations[1].Image);
         Assert.Same(editor.Operations[0].Image, editor.PreviewImage);

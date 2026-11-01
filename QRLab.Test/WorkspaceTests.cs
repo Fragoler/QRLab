@@ -11,13 +11,13 @@ public sealed class WorkspaceTests
     public void GenerationKeepsFormsAcrossNavigation()
     {
         var vm = TestApplicationFactory.CreateMainWindow();
-        vm.Generation.Count = 12; vm.Generation.FirstNumber = 20; vm.Generation.Template = "TEST-{num}";
+        vm.Generation.Settings.Count = 12; vm.Generation.Settings.FirstNumber = 20; vm.Generation.Settings.Template = "TEST-{num}";
         vm.Generation.GenerateCommand.Execute(null);
         Assert.Equal(12, vm.Workspace.Samples.Count);
         Assert.Equal("TEST-0020", vm.Workspace.SelectedSample!.Content);
         vm.NavigateCommand.Execute("02"); vm.NavigateCommand.Execute("01");
-        Assert.Equal(12, vm.Generation.Count);
-        vm.Generation.Mode = GenerationMode.Single; vm.Generation.GenerateCommand.Execute(null);
+        Assert.Equal(12, vm.Generation.Settings.Count);
+        vm.Generation.Settings.Mode = GenerationMode.Single; vm.Generation.GenerateCommand.Execute(null);
         Assert.Single(vm.Workspace.Samples);
     }
 
@@ -25,7 +25,7 @@ public sealed class WorkspaceTests
     public async Task MutationHistorySupportsUndoRedoResetAndBatchApplication()
     {
         var vm = TestApplicationFactory.CreateMainWindow();
-        vm.Generation.Count = 2; vm.Generation.ImageWidth = 256; vm.Generation.ImageHeight = 256;
+        vm.Generation.Settings.Count = 2; vm.Generation.Settings.ImageWidth = 256; vm.Generation.Settings.ImageHeight = 256;
         vm.Generation.GenerateCommand.Execute(null);
         var editor = vm.Mutations;
         var source = vm.Workspace.SelectedSample!.OriginalImage;

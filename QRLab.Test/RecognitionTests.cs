@@ -7,7 +7,7 @@ using QRLab.Core.Models.Recognition;
 using QRLab.Image.Generation;
 using QRLab.Image.Recognition;
 using QRLab.Test.Fixtures;
-using QRLab.View.Presentation.Recognition;
+using QRLab.View.ViewModels.Reading;
 using Xunit;
 
 namespace QRLab.Test;
@@ -64,23 +64,23 @@ public sealed class RecognitionTests
     public async Task ReadingFiltersActualResultsAndInvalidatesThemAfterMutation()
     {
         var vm = TestApplicationFactory.CreateMainWindow();
-        vm.Generation.Count = 2; vm.Generation.ImageWidth = 256; vm.Generation.ImageHeight = 256;
+        vm.Generation.Settings.Count = 2; vm.Generation.Settings.ImageWidth = 256; vm.Generation.Settings.ImageHeight = 256;
         vm.Generation.GenerateCommand.Execute(null);
-        Assert.Equal(0, vm.Reading.ResultsChecked);
-        vm.Reading.Timeout = 10000;
+        Assert.Equal(0, vm.Reading.Results.Checked);
+        vm.Reading.Settings.Timeout = 10000;
         await vm.Reading.RunCommand.ExecuteAsync(null);
-        Assert.Equal(2, vm.Reading.ResultsSuccess);
+        Assert.Equal(2, vm.Reading.Results.Success);
         Assert.All(vm.Workspace.Samples, sample => Assert.Equal(sample.Content, sample.Result!.DecodedContent));
         vm.Mutations.AddCommand.Execute(MutationKind.GaussianBlur);
-        Assert.Equal(1, vm.Reading.ResultsChecked);
-        vm.Mutations.NoiseDensity = 100; vm.Mutations.SaltPercent = 0;
+        Assert.Equal(1, vm.Reading.Results.Checked);
+        vm.Mutations.Noise.DensityPercent = 100; vm.Mutations.Noise.SaltPercent = 0;
         vm.Mutations.AddCommand.Execute(MutationKind.SaltAndPepper);
         await vm.Reading.RunCommand.ExecuteAsync(null);
-        Assert.Equal(1, vm.Reading.ResultsSuccess);
-        Assert.Equal(1, vm.Reading.ResultsFailed);
-        vm.Reading.Filter = RecognitionFilter.Failed;
-        Assert.Same(vm.Workspace.SelectedSample, Assert.Single(vm.Reading.Results));
-        vm.Reading.Search = "no-match";
-        Assert.Empty(vm.Reading.Results);
+        Assert.Equal(1, vm.Reading.Results.Success);
+        Assert.Equal(1, vm.Reading.Results.Failed);
+        vm.Reading.Results.Filter = RecognitionFilter.Failed;
+        Assert.Same(vm.Workspace.SelectedSample, Assert.Single(vm.Reading.Results.Items));
+        vm.Reading.Results.Search = "no-match";
+        Assert.Empty(vm.Reading.Results.Items);
     }
 }

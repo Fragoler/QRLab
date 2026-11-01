@@ -1,6 +1,7 @@
 using QRLab.Core.Models.Mutations;
+using QRLab.View.ViewModels.Common;
 
-namespace QRLab.View.Presentation.Mutations;
+namespace QRLab.View.ViewModels.Mutations;
 
 public static class MutationChoices
 {
@@ -24,10 +25,11 @@ public static class MutationChoices
         ]);
     
     public static FrameLabel Original { get; } = new("Исходник", "Защищён");
+    public static string Name(MutationKind kind) => Operations.Single(operation => operation.Id == kind).Name;
     public static string Describe(MutationOptions options) => options switch
     {
         GaussianBlurOptions blur => $"σ = {blur.Sigma:N1} px",
-        OcclusionOptions area => $"{GenerationChoices.Name(OcclusionShapes, area.Shape)} • {area.Width:N0} × {area.Height:N0}% • {area.Angle:N0}° • {area.Color}",
+        OcclusionOptions area => $"{OcclusionShapes.Single(shape => shape.Id == area.Shape).Name} • {area.Width:N0} × {area.Height:N0}% • {area.Angle:N0}° • {area.Color}",
         PerspectiveMutationOptions perspective => $"X: {perspective.AngleX:N0}° • Y: {perspective.AngleY:N0}° • D: {perspective.Distance:N1}",
         SaltAndPepperOptions noise => $"{noise.DensityPercent:N1}% • белых {noise.SaltPercent:N0}% • seed {noise.Seed}",
         _ => throw new ArgumentOutOfRangeException(nameof(options))

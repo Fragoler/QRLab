@@ -36,9 +36,9 @@ public sealed class CsvExportTests : IDisposable
     public async Task ReadingExportWritesAllRowsAndCancellationPreservesExistingFile()
     {
         var vm = TestApplicationFactory.CreateMainWindow();
-        vm.Generation.Count = 2; vm.Generation.ImageWidth = 256; vm.Generation.ImageHeight = 256;
+        vm.Generation.Settings.Count = 2; vm.Generation.Settings.ImageWidth = 256; vm.Generation.Settings.ImageHeight = 256;
         vm.Generation.GenerateCommand.Execute(null);
-        vm.Reading.Timeout = 10000;
+        vm.Reading.Settings.Timeout = 10000;
         await vm.Reading.RunCommand.ExecuteAsync(null);
         vm.Reading.ExportDestination = Path.Combine(_root, "report.csv");
         vm.Reading.IsExportOpen = true;
