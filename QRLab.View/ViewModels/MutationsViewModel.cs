@@ -1,223 +1,182 @@
-using System.Collections.ObjectModel;
+﻿using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using QRLab.Core.Models.Images;
 using QRLab.Core.Models.Mutations;
-using QRLab.View.Presentation;
-using QRLab.View.Presentation.Mutations;
+using QRLab.Core.Services;
+using QRLab.View.ViewModels.Common;
 using QRLab.View.ViewModels.Mutations;
+using QRLab.View.ViewModels.Samples;
 
 namespace QRLab.View.ViewModels;
 
-public sealed partial class MutationsViewModel : ScreenViewModel
+public sealed partial class MutationsViewModel : ScreenViewModel, IDisposable
 {
-    private bool _loading;
-    private readonly Stack<OperationViewModel> _undone = new();
+    private readonly MutationService _service;
+    private readonly Dictionary<MutationKind, MutationSettingsViewModel> _settings = new()
+    {
+        [MutationKind.GaussianBlur] = new GaussianBlurSettingsViewModel(new()),
+        [MutationKind.Perspective] = new PerspectiveSettingsViewModel(new()),
+        [MutationKind.SaltAndPepper] = new SaltAndPepperSettingsViewModel(new()),
+        [MutationKind.Occlusion] = new OcclusionSettingsViewModel(new())
+    };
+    private SampleViewModel? _sample;
+    private int _selectedIndex = -1;
+    private bool _updating;
+    private IReadOnlyList<OperationViewModel> _frames = [];
     public Workspace.WorkspaceViewModel Workspace { get; }
-    public IReadOnlyList<EnumOption<ImageInterpolation>> Interpolations => MutationChoices.Interpolations;
-    public IReadOnlyList<EnumOption<OcclusionShape>> OcclusionShapes => MutationChoices.OcclusionShapes;
-    [ObservableProperty] private OcclusionShape _areaShape = OcclusionShape.Rectangle;
-    [ObservableProperty] private string _areaColor = "#808080";
-    [ObservableProperty] private double _areaCenterX = 50;
-    [ObservableProperty] private double _areaCenterY = 50;
-    [ObservableProperty] private double _areaWidth = 25;
-    [ObservableProperty] private double _areaHeight = 25;
-    [ObservableProperty] private double _areaAngle;
-    [ObservableProperty] private double _angleX = MutationDefaults.AngleX;
-    [ObservableProperty] private double _angleY = MutationDefaults.AngleY;
-    [ObservableProperty] private double _distance = MutationDefaults.Distance;
-    [ObservableProperty] private double _noiseDensity = MutationDefaults.NoisePercent;
-    [ObservableProperty] private double _saltPercent = MutationDefaults.SaltPercent;
-    [ObservableProperty] private double _blur = MutationDefaults.Sigma;
-    [ObservableProperty] private decimal? _seed = MutationDefaults.Seed;
-    [ObservableProperty] private ImageInterpolation _interpolation = ImageInterpolation.Bicubic;
-    [ObservableProperty] private OperationViewModel? _selectedOperation;
+    public GaussianBlurSettingsViewModel GaussianBlur => (GaussianBlurSettingsViewModel)_settings[MutationKind.GaussianBlur];
+    public PerspectiveSettingsViewModel Perspective => (PerspectiveSettingsViewModel)_settings[MutationKind.Perspective];
+    public SaltAndPepperSettingsViewModel Noise => (SaltAndPepperSettingsViewModel)_settings[MutationKind.SaltAndPepper];
+    public OcclusionSettingsViewModel Occlusion => (OcclusionSettingsViewModel)_settings[MutationKind.Occlusion];
+    [ObservableProperty] private MutationSettingsViewModel? _selectedSettings;
     [ObservableProperty] private bool _isBusy;
-    public ObservableCollection<OperationViewModel> Operations => Workspace.SelectedSample?.Operations ?? [];
-    public IReadOnlyList<OperationViewModel> Frames => Workspace.SelectedSample is { } sample
-        ? new[] { sample.OriginalFrame }.Concat(Operations).ToArray() : [];
+    public IReadOnlyList<OperationViewModel> Operations => _sample?.Operations ?? (IReadOnlyList<OperationViewModel>)Array.Empty<OperationViewModel>();
+    public IReadOnlyList<OperationViewModel> Frames => _frames;
+    public OperationViewModel? SelectedOperation
+    {
+        get => _selectedIndex >= 0 && _selectedIndex < Operations.Count ? Operations[_selectedIndex] : null;
+        set
+        {
+            if (!_updating) SelectOperation(value is null ? -1 : Operations.ToList().IndexOf(value));
+        }
+    }
     public OperationViewModel? SelectedFrame
     {
-        get => SelectedOperation ?? Workspace.SelectedSample?.OriginalFrame;
+        get => SelectedOperation ?? _sample?.OriginalFrame;
         set => SelectedOperation = value?.Options is null ? null : value;
     }
-    public RasterImage? PreviewImage => SelectedOperation?.Image ?? Workspace.SelectedSample?.OriginalImage;
+    public RasterImage? PreviewImage => SelectedFrame?.Image;
     public IReadOnlyList<EnumOption<MutationKind>> AvailableMutations => MutationChoices.Operations;
-    public bool IsSaltAndPepper => SelectedOperation?.Options is SaltAndPepperOptions;
-    public bool IsBlur => SelectedOperation?.Options is GaussianBlurOptions;
-    public bool IsPerspective => SelectedOperation?.Options is PerspectiveMutationOptions;
-    public bool IsOcclusion => SelectedOperation?.Options is OcclusionOptions;
-    public bool CanUndo => Operations.Count > 0;
-    public bool CanRedo => _undone.Count > 0;
+    public bool CanUndo => _sample?.State.Mutations.CanUndo == true;
+    public bool CanRedo => _sample?.State.Mutations.CanRedo == true;
 
-    public MutationsViewModel(Workspace.WorkspaceViewModel workspace) : base("02", "Мутации", "Редактор искажений / цепочка операций")
+    public MutationsViewModel(Workspace.WorkspaceViewModel workspace, MutationService service)
+        : base("02", "Мутации", "Редактор искажений / цепочка операций")
     {
         Workspace = workspace;
-        _selectedOperation = Operations.LastOrDefault();
-        Workspace.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName != nameof(Workspace.SelectedSample)) return;
-            _undone.Clear();
-            Refresh();
-            SelectedOperation = Operations.LastOrDefault();
-            OnPropertyChanged(nameof(SelectedFrame));
-        };
+        _service = service;
+        Workspace.PropertyChanged += WorkspaceChanged;
+        SelectSample();
     }
-
-    partial void OnAngleXChanged(double value) => UpdatePreview();
-    partial void OnAreaShapeChanged(OcclusionShape value) => UpdatePreview();
-    partial void OnAreaColorChanged(string value) => UpdatePreview();
-    partial void OnAreaCenterXChanged(double value) => UpdatePreview();
-    partial void OnAreaCenterYChanged(double value) => UpdatePreview();
-    partial void OnAreaWidthChanged(double value) => UpdatePreview();
-    partial void OnAreaHeightChanged(double value) => UpdatePreview();
-    partial void OnAreaAngleChanged(double value) => UpdatePreview();
-    partial void OnAngleYChanged(double value) => UpdatePreview();
-    partial void OnDistanceChanged(double value) => UpdatePreview();
-    partial void OnNoiseDensityChanged(double value) => UpdatePreview();
-    partial void OnSaltPercentChanged(double value) => UpdatePreview();
-    partial void OnSeedChanged(decimal? value) => UpdatePreview();
-    partial void OnBlurChanged(double value) => UpdatePreview();
-    partial void OnInterpolationChanged(ImageInterpolation value) => UpdatePreview();
-
-    private MutationOptions CurrentOptions(MutationKind kind) => kind switch
+    private void WorkspaceChanged(object? sender, PropertyChangedEventArgs args)
     {
-        MutationKind.GaussianBlur => new GaussianBlurOptions { Sigma = Blur },
-        MutationKind.Occlusion => new OcclusionOptions
-        {
-            Shape = AreaShape, Color = AreaColor, CenterX = AreaCenterX, CenterY = AreaCenterY,
-            Width = AreaWidth, Height = AreaHeight, Angle = AreaAngle
-        },
-        MutationKind.SaltAndPepper => new SaltAndPepperOptions
-        {
-            DensityPercent = NoiseDensity, SaltPercent = SaltPercent, Seed = checked((int)(Seed ?? MutationDefaults.Seed))
-        },
-        MutationKind.Perspective => new PerspectiveMutationOptions
-        {
-            AngleX = AngleX, AngleY = AngleY, Distance = Distance, Interpolation = Interpolation
-        },
-        _ => throw new ArgumentOutOfRangeException(nameof(kind))
-    };
-
-    private void UpdatePreview()
+        if (args.PropertyName == nameof(Workspace.SelectedSample)) SelectSample();
+    }
+    private void SelectSample()
     {
-        if (_loading || SelectedOperation?.Options is not { } options) return;
-        var index = Operations.IndexOf(SelectedOperation);
-        if (index < 0 || Workspace.SelectedSample is not { } sample) return;
-        var chain = Operations.Select(o => o.Options!).ToArray();
-
-        try
+        if (_sample is not null)
         {
-            chain[index] = CurrentOptions(options.Kind);
-            var frames = Workspace.Mutate(sample.OriginalImage, chain);
-            Workspace.Error = "";
-            _loading = true;
-            try
-            {
-                ReplaceOperations(sample, frames);
-                _undone.Clear();
-                Refresh();
-                SelectedOperation = sample.Operations[index];
-                OnPropertyChanged(nameof(SelectedFrame));
-                OnPropertyChanged(nameof(PreviewImage));
-            }
-            finally { _loading = false; }
+            _sample.PropertyChanged -= SampleChanged;
+            _sample.State.Mutations.ClearRedo();
         }
-        catch (Exception exception) when (exception is ArgumentException or OverflowException) { Workspace.ShowError(exception.Message); }
+        _sample = Workspace.SelectedSample;
+        if (_sample is not null) _sample.PropertyChanged += SampleChanged;
+        SelectOperation(Operations.Count - 1);
+        Refresh();
     }
-
-    partial void OnSelectedOperationChanged(OperationViewModel? value)
+    private void SampleChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (_loading) return;
-        _loading = true;
-        switch (value?.Options)
+        if (args.PropertyName == nameof(SampleViewModel.Image)) Refresh();
+    }
+    private void SelectOperation(int index)
+    {
+        _selectedIndex = index;
+        if (SelectedSettings is not null) SelectedSettings.PropertyChanged -= SettingsChanged;
+        SelectedSettings = SelectedOperation?.Options is { } options ? MutationSettingsViewModel.FromOptions(options) : null;
+        if (SelectedSettings is not null)
         {
-            case OcclusionOptions area:
-                AreaShape = area.Shape; AreaColor = area.Color; AreaCenterX = area.CenterX; AreaCenterY = area.CenterY;
-                AreaWidth = area.Width; AreaHeight = area.Height; AreaAngle = area.Angle; break;
-            case GaussianBlurOptions blur: Blur = blur.Sigma; break;
-            case SaltAndPepperOptions noise:
-                NoiseDensity = noise.DensityPercent; SaltPercent = noise.SaltPercent; Seed = noise.Seed; break;
-            case PerspectiveMutationOptions perspective:
-                AngleX = perspective.AngleX; AngleY = perspective.AngleY; Distance = perspective.Distance; Interpolation = perspective.Interpolation; break;
+            _settings[SelectedOperation!.Options!.Kind] = SelectedSettings;
+            SelectedSettings.PropertyChanged += SettingsChanged;
         }
-        _loading = false;
-        foreach (var name in new[] { nameof(SelectedFrame), nameof(PreviewImage), nameof(IsBlur), nameof(IsSaltAndPepper), nameof(IsPerspective), nameof(IsOcclusion) })
-            OnPropertyChanged(name);
+        OnPropertyChanged(nameof(GaussianBlur));
+        OnPropertyChanged(nameof(Perspective));
+        OnPropertyChanged(nameof(Noise));
+        OnPropertyChanged(nameof(Occlusion));
+        NotifySelection();
     }
-
-
-
-    [RelayCommand]
-    private void Add(MutationKind kind)
+    private void SettingsChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (Workspace.SelectedSample is not { } sample) return;
-        try
+        if (_sample is null || SelectedSettings is null || _selectedIndex < 0) return;
+        TryExecute(() => _service.Edit(_sample.State, _selectedIndex, SelectedSettings.ToOptions()));
+    }
+    private void TryExecute(Action action)
+    {
+        // Ignore transient deselection from two-way list bindings while frames are replaced.
+        _updating = true;
+        try { action(); Workspace.Error = ""; }
+        catch (Exception exception) when (exception is ArgumentException or OverflowException)
+        { Workspace.ShowError(exception.Message); }
+        finally { _updating = false; }
+    }
+    [RelayCommand] private void Add(MutationKind kind)
+    {
+        if (_sample is null) return;
+        TryExecute(() =>
         {
-            var options = CurrentOptions(kind);
-            var frame = Workspace.Mutate(sample.Image, [options]).Single();
-            Operations.Add(new($"{Operations.Count + 1:00}", frame.Options, frame.Image));
-            _undone.Clear(); Refresh();
-            SelectedOperation = Operations.Last();
-        }
-        catch (Exception exception) when (exception is ArgumentException or OverflowException) { Workspace.ShowError(exception.Message); }
+            _service.Add(_sample.State, _settings[kind].ToOptions());
+            SelectOperation(Operations.Count - 1);
+        });
     }
-
-    [RelayCommand(CanExecute = nameof(CanUndo))]
-    private void Undo()
+    [RelayCommand(CanExecute = nameof(CanUndo))] private void Undo()
     {
-        _undone.Push(Operations[^1]); Operations.RemoveAt(Operations.Count - 1);
-        Refresh(); SelectedOperation = Operations.LastOrDefault();
+        TryExecute(() =>
+        {
+            _sample!.State.Mutations.Undo();
+            SelectOperation(Operations.Count - 1);
+        });
     }
-
-    [RelayCommand(CanExecute = nameof(CanRedo))]
-    private void Redo()
+    [RelayCommand(CanExecute = nameof(CanRedo))] private void Redo()
     {
-        Operations.Add(_undone.Pop()); Refresh(); SelectedOperation = Operations.Last();
+        TryExecute(() =>
+        {
+            _sample!.State.Mutations.Redo();
+            SelectOperation(Operations.Count - 1);
+        });
     }
-
-    [RelayCommand]
-    private void Reset()
+    [RelayCommand] private void Reset()
     {
-        Operations.Clear(); _undone.Clear(); Refresh(); SelectedOperation = null;
+        TryExecute(() =>
+        {
+            _sample?.State.Mutations.Reset();
+            SelectOperation(-1);
+        });
     }
-
-    [RelayCommand]
-    private void Randomize()
+    [RelayCommand] private async Task Apply()
     {
-        Seed = Seed >= int.MaxValue ? 0 : (Seed ?? MutationDefaults.Seed) + 1;
-
-    }
-
-    [RelayCommand]
-    private async Task Apply()
-    {
-        var chain = Operations.Select(o => o.Options!).ToArray();
-        var targets = Workspace.Samples.Where(s => s != Workspace.SelectedSample).ToArray();
+        if (_sample is null) return;
+        var count = Operations.Count;
         IsBusy = true;
         try
         {
-            var results = await Task.Run(() => targets.Select(sample =>
-                (Sample: sample, Frames: Workspace.Mutate(sample.OriginalImage, chain))).ToArray());
-            foreach (var result in results) ReplaceOperations(result.Sample, result.Frames);
-            Refresh();
-            Workspace.Notice = $"Цепочка из {chain.Length} операций назначена {targets.Length + 1} образцам.";
+            var applied = await _service.ApplyToOthersAsync(_sample.State);
+            Workspace.ShowNotice($"Цепочка из {count} операций назначена {applied + 1} образцам.");
         }
-        catch (Exception exception) when (exception is ArgumentException or OverflowException) { Workspace.ShowError(exception.Message); }
+        catch (Exception exception) when (exception is ArgumentException or OverflowException)
+        { Workspace.ShowError(exception.Message); }
         finally { IsBusy = false; }
     }
-
-    private static void ReplaceOperations(Samples.SampleViewModel sample, IReadOnlyList<MutationFrame> frames)
+    private void NotifySelection()
     {
-        sample.Operations.Clear();
-        foreach (var (frame, index) in frames.Select((frame, index) => (frame, index)))
-            sample.Operations.Add(new($"{index + 1:00}", frame.Options, frame.Image));
+        OnPropertyChanged(nameof(SelectedOperation));
+        OnPropertyChanged(nameof(SelectedFrame));
+        OnPropertyChanged(nameof(PreviewImage));
     }
-
     private void Refresh()
     {
-        foreach (var name in new[] { nameof(Operations), nameof(Frames), nameof(SelectedFrame), nameof(PreviewImage), nameof(CanUndo), nameof(CanRedo) })
-            OnPropertyChanged(name);
-        UndoCommand.NotifyCanExecuteChanged(); RedoCommand.NotifyCanExecuteChanged();
+        _frames = _sample is null ? [] : new[] { _sample.OriginalFrame }.Concat(Operations).ToArray();
+        OnPropertyChanged(nameof(Operations));
+        OnPropertyChanged(nameof(Frames));
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+        NotifySelection();
+        UndoCommand.NotifyCanExecuteChanged();
+        RedoCommand.NotifyCanExecuteChanged();
+    }
+    public void Dispose()
+    {
+        Workspace.PropertyChanged -= WorkspaceChanged;
+        if (_sample is not null) _sample.PropertyChanged -= SampleChanged;
+        if (SelectedSettings is not null) SelectedSettings.PropertyChanged -= SettingsChanged;
     }
 }

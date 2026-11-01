@@ -1,14 +1,17 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:QRLab.View.ViewModels" xmlns:local="using:QRLab.View.Views.Mutations"
-             xmlns:p="using:QRLab.View.Presentation" x:Class="QRLab.View.Views.Mutations.PerspectiveSettingsView"
-             x:DataType="vm:MutationsViewModel">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:QRLab.View.ViewModels.Mutations"
+             xmlns:local="using:QRLab.View.Views.Mutations"
+             xmlns:common="clr-namespace:QRLab.View.ViewModels.Common"
+             x:Class="QRLab.View.Views.Mutations.PerspectiveSettingsView"
+             x:DataType="vm:PerspectiveSettingsViewModel">
   <StackPanel Spacing="8">
     <local:NumericMutationParameter Label="Наклон по X, °" Value="{Binding AngleX, Mode=TwoWay}" Minimum="-60" Maximum="60"/>
     <local:NumericMutationParameter Label="Наклон по Y, °" Value="{Binding AngleY, Mode=TwoWay}" Minimum="-60" Maximum="60"/>
     <local:NumericMutationParameter Label="Дистанция проекции" Value="{Binding Distance, Mode=TwoWay}" Minimum="1" Maximum="10"/>
     <TextBlock Text="Интерполяция" Classes="label"/>
-    <ComboBox ItemsSource="{Binding Interpolations}" SelectedValue="{Binding Interpolation, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=p:EnumOption}">
-      <ComboBox.ItemTemplate><DataTemplate x:DataType="p:EnumOption"><TextBlock Text="{Binding Name}"/></DataTemplate></ComboBox.ItemTemplate>
+    <ComboBox ItemsSource="{Binding Interpolations}" SelectedValue="{Binding Interpolation, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}">
+      <ComboBox.ItemTemplate><DataTemplate x:DataType="common:EnumOption"><TextBlock Text="{Binding Name}"/></DataTemplate></ComboBox.ItemTemplate>
     </ComboBox>
   </StackPanel>
 </UserControl>

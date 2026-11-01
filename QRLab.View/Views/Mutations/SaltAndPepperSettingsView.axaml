@@ -1,9 +1,11 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:QRLab.View.ViewModels" xmlns:local="using:QRLab.View.Views.Mutations"
-             xmlns:p="using:QRLab.View.Presentation" x:Class="QRLab.View.Views.Mutations.SaltAndPepperSettingsView"
-             x:DataType="vm:MutationsViewModel">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:QRLab.View.ViewModels.Mutations"
+             xmlns:local="using:QRLab.View.Views.Mutations"
+             x:Class="QRLab.View.Views.Mutations.SaltAndPepperSettingsView"
+             x:DataType="vm:SaltAndPepperSettingsViewModel">
   <StackPanel Spacing="8">
-    <local:NumericMutationParameter Label="Плотность шума, %" Value="{Binding NoiseDensity, Mode=TwoWay}" Minimum="0" Maximum="100"/>
+    <local:NumericMutationParameter Label="Плотность шума, %" Value="{Binding DensityPercent, Mode=TwoWay}" Minimum="0" Maximum="100"/>
     <local:NumericMutationParameter Label="Доля белых точек, %" Value="{Binding SaltPercent, Mode=TwoWay}" Minimum="0" Maximum="100"/>
     <TextBlock Text="Seed" Classes="label"/>
     <NumericUpDown Value="{Binding Seed, Mode=TwoWay}" Minimum="0" Maximum="2147483647" FormatString="0"/>

@@ -1,6 +1,7 @@
 using QRLab.Core.Models.Generation;
+using QRLab.View.ViewModels.Common;
 
-namespace QRLab.View.Presentation;
+namespace QRLab.View.ViewModels.Generation;
 
 public sealed class GenerationInputLimits
 {

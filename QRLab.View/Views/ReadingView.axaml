@@ -3,13 +3,13 @@
              xmlns:vm="using:QRLab.View.ViewModels"
              xmlns:c="using:QRLab.View.Controls"
              xmlns:icons="using:QRLab.View.Controls"
-             xmlns:p="using:QRLab.View.Presentation"
              xmlns:r="clr-namespace:QRLab.Core.Models.Recognition;assembly=QRLab.Core"
              xmlns:samples="clr-namespace:QRLab.View.ViewModels.Samples"
+             xmlns:common="clr-namespace:QRLab.View.ViewModels.Common"
              x:Class="QRLab.View.Views.ReadingView"
              x:DataType="vm:ReadingViewModel">
   <UserControl.Resources>
-    <DataTemplate x:Key="RecognitionChoiceTemplate" x:DataType="p:EnumOption"><TextBlock Text="{Binding Name}"/></DataTemplate>
+    <DataTemplate x:Key="RecognitionChoiceTemplate" x:DataType="common:EnumOption"><TextBlock Text="{Binding Name}"/></DataTemplate>
   </UserControl.Resources>
   <Grid Margin="18" RowDefinitions="Auto,Auto,*" RowSpacing="12">
     <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16">
@@ -33,9 +33,9 @@
       </StackPanel>
     </Grid>
     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="24">
-      <TextBlock Text="{Binding ResultsChecked, StringFormat=Обработано: {0}}" Classes="muted"/>
-      <TextBlock Text="{Binding Rate}" Classes="accent"/>
-      <TextBlock Text="{Binding Average, StringFormat=Среднее: {0}}" Classes="muted"/>
+      <TextBlock Text="{Binding Results.Checked, StringFormat=Обработано: {0}}" Classes="muted"/>
+      <TextBlock Text="{Binding Results.Rate}" Classes="accent"/>
+      <TextBlock Text="{Binding Results.Average, StringFormat=Среднее: {0}}" Classes="muted"/>
       <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Width="100" Height="3"/>
     </StackPanel>
     <Grid Grid.Row="2" ColumnDefinitions="*,280" ColumnSpacing="12">
@@ -45,14 +45,14 @@
             <TextBlock Text="Результаты распознавания" Classes="heading"/>
           </Border>
           <Grid Grid.Row="1" ColumnDefinitions="Auto,*" Margin="10" ColumnSpacing="12">
-            <ListBox Classes="tabs" ItemsSource="{Binding Filters}" ItemTemplate="{StaticResource RecognitionChoiceTemplate}" SelectedValue="{Binding Filter, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=p:EnumOption}">
+            <ListBox Classes="tabs" ItemsSource="{Binding Results.Filters}" ItemTemplate="{StaticResource RecognitionChoiceTemplate}" SelectedValue="{Binding Results.Filter, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}">
               <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                   <StackPanel Orientation="Horizontal"/>
                 </ItemsPanelTemplate>
               </ListBox.ItemsPanel>
             </ListBox>
-            <TextBox Grid.Column="1" Text="{Binding Search, Mode=TwoWay}" PlaceholderText="⌕  Найти образец или содержимое" VerticalAlignment="Center"/>
+            <TextBox Grid.Column="1" Text="{Binding Results.Search, Mode=TwoWay}" PlaceholderText="⌕  Найти образец или содержимое" VerticalAlignment="Center"/>
           </Grid>
           <Border Grid.Row="2" Background="#171C1E" Padding="12,0">
             <Grid ColumnDefinitions="105,100,*,165,85">
@@ -63,7 +63,7 @@
               <TextBlock Grid.Column="4" Text="ВРЕМЯ" Classes="muted" FontSize="9"/>
             </Grid>
           </Border>
-          <ListBox Grid.Row="3" ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedResult, Mode=TwoWay}">
+          <ListBox Grid.Row="3" ItemsSource="{Binding Results.Items}" SelectedItem="{Binding Results.SelectedResult, Mode=TwoWay}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="samples:SampleViewModel">
                 <Grid ColumnDefinitions="105,100,*,165,85" MinHeight="28">
@@ -84,7 +84,7 @@
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>
-          <TextBlock Grid.Row="3" Text="Нет подходящих образцов. Измените поиск или фильтр." IsVisible="{Binding NoResults}" HorizontalAlignment="Center" VerticalAlignment="Center" Classes="muted"/>
+          <TextBlock Grid.Row="3" Text="Нет подходящих образцов. Измените поиск или фильтр." IsVisible="{Binding Results.NoResults}" HorizontalAlignment="Center" VerticalAlignment="Center" Classes="muted"/>
           <Border Grid.Row="4" Padding="14">
             <TextBlock Text="Выберите строку, чтобы открыть образец в редакторе мутаций. Поиск работает по имени и исходному содержимому." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
           </Border>
@@ -105,8 +105,8 @@
                   <TextBlock Text="Декодер" Classes="label"/>
                   <TextBlock Text="{x:Static r:RecognitionDefaults.DecoderName}" Classes="accent"/>
                   <TextBlock Text="Тайм-аут, мс" Classes="label"/>
-                  <NumericUpDown Value="{Binding Timeout, Mode=TwoWay}" Minimum="{Binding TimeoutRange.Minimum}" Maximum="{Binding TimeoutRange.Maximum}" Increment="50"/>
-                  <CheckBox Content="Усиленный поиск" IsChecked="{Binding Enhanced, Mode=TwoWay}" FontSize="11"/>
+                  <NumericUpDown Value="{Binding Settings.Timeout, Mode=TwoWay}" Minimum="{Binding Settings.TimeoutRange.Minimum}" Maximum="{Binding Settings.TimeoutRange.Maximum}" Increment="50"/>
+                  <CheckBox Content="Усиленный поиск" IsChecked="{Binding Settings.Enhanced, Mode=TwoWay}" FontSize="11"/>
                   <Border Classes="divider"/>
                   <TextBlock Text="Настройки применяются при запуске нового прогона." Classes="muted" TextWrapping="Wrap" FontSize="10"/>
                 </StackPanel>
@@ -117,19 +117,19 @@
                 <TextBlock Text="Сводка распознавания" Classes="heading"/>
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Text="Ошибки" Classes="muted"/>
-                  <TextBlock Grid.Column="1" Text="{Binding ResultsFailed}" Classes="danger"/>
+                  <TextBlock Grid.Column="1" Text="{Binding Results.Failed}" Classes="danger"/>
                 </Grid>
-                <ProgressBar Maximum="{Binding Workspace.Samples.Count}" Value="{Binding ResultsFailed}" Foreground="#E58A86" Height="4"/>
+                <ProgressBar Maximum="{Binding Workspace.Samples.Count}" Value="{Binding Results.Failed}" Foreground="#E58A86" Height="4"/>
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Text="Тайм-аут" Classes="muted"/>
-                  <TextBlock Grid.Column="1" Text="{Binding ResultsTimeout}" Classes="danger"/>
+                  <TextBlock Grid.Column="1" Text="{Binding Results.Timeout}" Classes="danger"/>
                 </Grid>
-                <ProgressBar Maximum="{Binding Workspace.Samples.Count}" Value="{Binding ResultsTimeout}" Foreground="#E58A86" Height="4"/>
+                <ProgressBar Maximum="{Binding Workspace.Samples.Count}" Value="{Binding Results.Timeout}" Foreground="#E58A86" Height="4"/>
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Text="Успешно считано" Classes="muted"/>
-                  <TextBlock Grid.Column="1" Text="{Binding ResultsSuccess}" Classes="accent"/>
+                  <TextBlock Grid.Column="1" Text="{Binding Results.Success}" Classes="accent"/>
                 </Grid>
-                <ProgressBar Maximum="{Binding Workspace.Samples.Count}" Value="{Binding ResultsSuccess}" Foreground="#75D9BE" Height="4"/>
+                <ProgressBar Maximum="{Binding Workspace.Samples.Count}" Value="{Binding Results.Success}" Foreground="#75D9BE" Height="4"/>
               </StackPanel>
             </Border>
           </StackPanel>

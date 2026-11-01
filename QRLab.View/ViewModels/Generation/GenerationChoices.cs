@@ -1,8 +1,9 @@
 using QRLab.Core.Models.Generation;
 using QRLab.Core.Models.Generation.Barcode;
 using QRLab.Core.Models.Generation.Qrcode;
+using QRLab.View.ViewModels.Common;
 
-namespace QRLab.View.Presentation;
+namespace QRLab.View.ViewModels.Generation;
 
 public static class GenerationChoices
 {

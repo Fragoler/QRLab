@@ -1,12 +1,18 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:QRLab.View.ViewModels" xmlns:local="using:QRLab.View.Views.Mutations"
-             xmlns:p="using:QRLab.View.Presentation" x:Class="QRLab.View.Views.Mutations.MutationSettingsView"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:QRLab.View.ViewModels"
+             xmlns:settings="using:QRLab.View.ViewModels.Mutations"
+             xmlns:local="using:QRLab.View.Views.Mutations"
+             x:Class="QRLab.View.Views.Mutations.MutationSettingsView"
              x:DataType="vm:MutationsViewModel">
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="{x:Type settings:GaussianBlurSettingsViewModel}"><local:GaussianBlurSettingsView/></DataTemplate>
+    <DataTemplate DataType="{x:Type settings:PerspectiveSettingsViewModel}"><local:PerspectiveSettingsView/></DataTemplate>
+    <DataTemplate DataType="{x:Type settings:SaltAndPepperSettingsViewModel}"><local:SaltAndPepperSettingsView/></DataTemplate>
+    <DataTemplate DataType="{x:Type settings:OcclusionSettingsViewModel}"><local:OcclusionSettingsView/></DataTemplate>
+  </UserControl.DataTemplates>
   <StackPanel Spacing="8">
     <TextBlock Text="Параметры операции" Classes="heading"/>
-    <local:PerspectiveSettingsView IsVisible="{Binding IsPerspective}"/>
-    <local:GaussianBlurSettingsView IsVisible="{Binding IsBlur}"/>
-    <local:SaltAndPepperSettingsView IsVisible="{Binding IsSaltAndPepper}"/>
-    <local:OcclusionSettingsView IsVisible="{Binding IsOcclusion}"/>
+    <ContentControl Content="{Binding SelectedSettings}" HorizontalContentAlignment="Stretch"/>
   </StackPanel>
 </UserControl>

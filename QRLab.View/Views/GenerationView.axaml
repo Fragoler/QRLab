@@ -1,17 +1,17 @@
-<UserControl xmlns="https://github.com/avaloniaui" 
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
-             xmlns:vm="using:QRLab.View.ViewModels" 
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:QRLab.View.ViewModels"
              xmlns:c="using:QRLab.View.Controls"
              xmlns:icons="using:QRLab.View.Controls"
              xmlns:images="clr-namespace:QRLab.Core.Models.Images;assembly=QRLab.Core"
              xmlns:generation="clr-namespace:QRLab.Core.Models.Generation;assembly=QRLab.Core"
-             xmlns:presentation="using:QRLab.View.Presentation"
              xmlns:samples="clr-namespace:QRLab.View.ViewModels.Samples"
              xmlns:vm1="clr-namespace:QRLab.View.ViewModels.Generation"
+             xmlns:common="clr-namespace:QRLab.View.ViewModels.Common"
              x:Class="QRLab.View.Views.GenerationView"
              x:DataType="vm1:GenerationViewModel">
   <UserControl.Resources>
-    <DataTemplate x:Key="GenerationChoiceTemplate" x:DataType="presentation:EnumOption">
+    <DataTemplate x:Key="GenerationChoiceTemplate" x:DataType="common:EnumOption">
       <TextBlock Text="{Binding Name}"/>
     </DataTemplate>
   </UserControl.Resources>
@@ -47,10 +47,10 @@
           </Border>
           <ScrollViewer Grid.Row="1">
             <StackPanel Margin="14" Spacing="5">
-              <ListBox Classes="tabs" 
-                       ItemsSource="{Binding Modes}" 
-                       SelectedValue="{Binding Mode, Mode=TwoWay}" 
-                       SelectedValueBinding="{Binding Value, DataType=presentation:EnumOption}" 
+              <ListBox Classes="tabs"
+                       ItemsSource="{Binding Settings.Modes}"
+                       SelectedValue="{Binding Settings.Mode, Mode=TwoWay}"
+                       SelectedValueBinding="{Binding Value, DataType=common:EnumOption}"
                        ItemTemplate="{StaticResource GenerationChoiceTemplate}">
                 <ListBox.ItemsPanel>
                   <ItemsPanelTemplate>
@@ -59,16 +59,16 @@
                 </ListBox.ItemsPanel>
               </ListBox>
               <TextBlock Text="Тип кода" Classes="label"/>
-              <ListBox Classes="tabs iconTabs" ItemsSource="{Binding Formats}"
-                       SelectedValue="{Binding Format, Mode=TwoWay}" 
-                       SelectedValueBinding="{Binding Value, DataType=presentation:EnumOption}">
+              <ListBox Classes="tabs iconTabs" ItemsSource="{Binding Settings.Formats}"
+                       SelectedValue="{Binding Settings.Format, Mode=TwoWay}"
+                       SelectedValueBinding="{Binding Value, DataType=common:EnumOption}">
                 <ListBox.ItemsPanel>
                   <ItemsPanelTemplate>
                     <StackPanel Orientation="Horizontal"/>
                   </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
                 <ListBox.ItemTemplate>
-                  <DataTemplate x:DataType="presentation:EnumOption">
+                  <DataTemplate x:DataType="common:EnumOption">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <icons:SvgIcon Source="{Binding Icon}"/>
                       <TextBlock Text="{Binding Name}"/>
@@ -76,43 +76,43 @@
                   </DataTemplate>
                 </ListBox.ItemTemplate>
               </ListBox>
-              <StackPanel IsVisible="{Binding IsQr}" Spacing="5">
+              <StackPanel IsVisible="{Binding Settings.IsQr}" Spacing="5">
                 <TextBlock Text="Класс размера QR" Classes="label"/>
-                <NumericUpDown Value="{Binding QrVersion, Mode=TwoWay}" Minimum="{Binding Limits.QrVersion.Minimum}" Maximum="{Binding Limits.QrVersion.Maximum}" FormatString="0"/>
+                <NumericUpDown Value="{Binding Settings.Qr.Version, Mode=TwoWay}" Minimum="{Binding Settings.Limits.QrVersion.Minimum}" Maximum="{Binding Settings.Limits.QrVersion.Maximum}" FormatString="0"/>
                 <TextBlock Text="0 — авто; 1–40: от 21×21 до 177×177 модулей" Classes="muted" FontSize="10" TextWrapping="Wrap"/>
               </StackPanel>
-              <StackPanel IsVisible="{Binding IsBarcode}" Spacing="5">
+              <StackPanel IsVisible="{Binding Settings.IsBarcode}" Spacing="5">
                 <TextBlock Text="Тип штрихкода" Classes="label"/>
-                <ComboBox ItemsSource="{Binding BarcodeTypes}" SelectedValue="{Binding BarcodeType, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=presentation:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
-                <TextBlock IsVisible="{Binding IsEan13}" Text="EAN-13: 12 цифр (контрольная добавится) или 13 с верной контрольной суммой." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
+                <ComboBox ItemsSource="{Binding Settings.Barcode.Types}" SelectedValue="{Binding Settings.Barcode.Type, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
+                <TextBlock IsVisible="{Binding Settings.Barcode.IsEan13}" Text="EAN-13: 12 цифр (контрольная добавится) или 13 с верной контрольной суммой." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
               </StackPanel>
               <TextBlock Text="Источник содержимого" Classes="label"/>
-              <ComboBox ItemsSource="{Binding Sources}" SelectedValue="{Binding Source, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=presentation:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
+              <ComboBox ItemsSource="{Binding Settings.Sources}" SelectedValue="{Binding Settings.Source, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
               <TextBlock Text="Содержимое / шаблон" Classes="label"/>
-              <TextBox Text="{Binding Template, Mode=TwoWay}" AcceptsReturn="True" Height="62" TextWrapping="Wrap"/>
+              <TextBox Text="{Binding Settings.Template, Mode=TwoWay}" AcceptsReturn="True" Height="62" TextWrapping="Wrap"/>
               <TextBlock Text="{}{num} — порядковый номер образца" Classes="muted" FontSize="10"/>
-              
-              <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding IsBatch}">
+
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding Settings.IsBatch}">
                 <StackPanel>
                   <TextBlock Text="Первый номер" Classes="label"/>
-                  <NumericUpDown Value="{Binding FirstNumber, Mode=TwoWay}" Minimum="{Binding Limits.FirstNumber.Minimum}" Maximum="{Binding Limits.FirstNumber.Maximum}" FormatString="0"/>
+                  <NumericUpDown Value="{Binding Settings.FirstNumber, Mode=TwoWay}" Minimum="{Binding Settings.Limits.FirstNumber.Minimum}" Maximum="{Binding Settings.Limits.FirstNumber.Maximum}" FormatString="0"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                   <TextBlock Text="Количество" Classes="label"/>
-                  <NumericUpDown Value="{Binding Count, Mode=TwoWay}" Minimum="{Binding Limits.Count.Minimum}" Maximum="{Binding Limits.Count.Maximum}" FormatString="0"/>
+                  <NumericUpDown Value="{Binding Settings.Count, Mode=TwoWay}" Minimum="{Binding Settings.Limits.Count.Minimum}" Maximum="{Binding Settings.Limits.Count.Maximum}" FormatString="0"/>
                 </StackPanel>
               </Grid>
-              
+
               <Border Classes="divider"/>
-              
+
               <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                 <StackPanel>
                   <TextBlock Text="Ширина, пикс." Classes="label"/>
-                  <NumericUpDown Value="{Binding ImageWidth, Mode=TwoWay}" Minimum="{Binding Limits.ImageSize.Minimum}" Maximum="{Binding Limits.ImageSize.Maximum}" FormatString="0"/>
+                  <NumericUpDown Value="{Binding Settings.ImageWidth, Mode=TwoWay}" Minimum="{Binding Settings.Limits.ImageSize.Minimum}" Maximum="{Binding Settings.Limits.ImageSize.Maximum}" FormatString="0"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                   <TextBlock Text="Высота, пикс." Classes="label"/>
-                  <NumericUpDown Value="{Binding ImageHeight, Mode=TwoWay}" Minimum="{Binding Limits.ImageSize.Minimum}" Maximum="{Binding Limits.ImageSize.Maximum}" FormatString="0"/>
+                  <NumericUpDown Value="{Binding Settings.ImageHeight, Mode=TwoWay}" Minimum="{Binding Settings.Limits.ImageSize.Minimum}" Maximum="{Binding Settings.Limits.ImageSize.Maximum}" FormatString="0"/>
                 </StackPanel>
               </Grid>
               <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
@@ -120,14 +120,14 @@
                   <TextBlock Text="Формат файла" Classes="label"/>
                   <TextBlock Text="{x:Static images:RasterImage.FormatName}" Classes="muted"/>
                 </StackPanel>
-                <StackPanel Grid.Column="1" IsVisible="{Binding IsQr}">
+                <StackPanel Grid.Column="1" IsVisible="{Binding Settings.IsQr}">
                   <TextBlock Text="Коррекция QR" Classes="label"/>
-                  <ComboBox ItemsSource="{Binding Corrections}" SelectedValue="{Binding Correction, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=presentation:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
+                  <ComboBox ItemsSource="{Binding Settings.Qr.Corrections}" SelectedValue="{Binding Settings.Qr.Correction, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
                 </StackPanel>
               </Grid>
               <StackPanel>
                 <TextBlock Text="Тихая зона, модулей" Classes="label"/>
-                <NumericUpDown Value="{Binding QuietZone, Mode=TwoWay}" Minimum="{Binding Limits.QuietZone.Minimum}" Maximum="{Binding Limits.QuietZone.Maximum}" FormatString="0"/>
+                <NumericUpDown Value="{Binding Settings.QuietZone, Mode=TwoWay}" Minimum="{Binding Settings.Limits.QuietZone.Minimum}" Maximum="{Binding Settings.Limits.QuietZone.Maximum}" FormatString="0"/>
               </StackPanel>
             </StackPanel>
           </ScrollViewer>
@@ -135,7 +135,7 @@
             <Button Classes="primary" Command="{Binding GenerateCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,12,0,0">
               <StackPanel Orientation="Horizontal" Spacing="7">
                 <icons:SvgIcon Source="plus"/>
-                <TextBlock Text="{Binding GenerateLabel}"/>
+                <TextBlock Text="{Binding Settings.GenerateLabel}"/>
               </StackPanel>
             </Button>
             <TextBlock Text="Параметры будут применены к новому набору." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
@@ -235,7 +235,7 @@
           <Button Content="Загрузить из папки" Command="{Binding LoadFolderCommand}" Classes="primary"/>
           <TextBlock Text="Название набора — имя папки. Папку можно перенести на другой компьютер." Classes="muted" TextWrapping="Wrap"/>
           <TextBlock Text="Или создать набор по шаблону:" Classes="muted"/>
-          <ItemsControl ItemsSource="{Binding Workspace.LibrarySets}">
+          <ItemsControl ItemsSource="{Binding LibrarySets}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="generation:LibrarySet">
                 <Button Content="{Binding Name}" Command="{ReflectionBinding $parent[UserControl].DataContext.LoadSetCommand}" CommandParameter="{Binding}" HorizontalAlignment="Stretch" Margin="0,4"/>
