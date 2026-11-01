@@ -19,7 +19,7 @@ public static class MutationChoices
         [
             new(MutationKind.GaussianBlur, "Размытие Гаусса", "drop"),
             new(MutationKind.Perspective, "Перспектива", "selection"),
-            new(MutationKind.SaltAndPepper, "Salt & Pepper", "droplets"), 
+            new(MutationKind.SaltAndPepper, "Соль и Перец", "droplets"), 
             new(MutationKind.Occlusion, "Закрытая область", "layers")
         ]);
     
