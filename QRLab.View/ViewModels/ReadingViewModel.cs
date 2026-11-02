@@ -41,7 +41,7 @@ public sealed partial class ReadingViewModel : ScreenViewModel
     public string Rate => ResultsChecked == 0 ? "Нет результатов" : $"{100d * ResultsSuccess / ResultsChecked:N1}% от проверенных";
 
     public ReadingViewModel(Workspace.WorkspaceViewModel workspace, IRecognitionReportExporter exporter)
-        : base("03", "Считывание и статистика", "Декодирование изображений и экспорт результатов")
+        : base("03", "Считывание", "Декодирование изображений и экспорт результатов")
     {
         Workspace = workspace;
         _exporter = exporter;

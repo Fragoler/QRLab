@@ -7,5 +7,6 @@
     <local:PerspectiveSettingsView IsVisible="{Binding IsPerspective}"/>
     <local:GaussianBlurSettingsView IsVisible="{Binding IsBlur}"/>
     <local:SaltAndPepperSettingsView IsVisible="{Binding IsSaltAndPepper}"/>
+    <local:OcclusionSettingsView IsVisible="{Binding IsOcclusion}"/>
   </StackPanel>
 </UserControl>
