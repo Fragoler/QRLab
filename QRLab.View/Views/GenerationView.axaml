@@ -138,7 +138,6 @@
                 <TextBlock Text="{Binding Settings.GenerateLabel}"/>
               </StackPanel>
             </Button>
-            <TextBlock Text="Параметры будут применены к новому набору." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
           </StackPanel>
         </Grid>
       </Border>
