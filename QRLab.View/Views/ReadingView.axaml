@@ -40,7 +40,7 @@
     </StackPanel>
     <Grid Grid.Row="2" ColumnDefinitions="*,340" ColumnSpacing="12">
       <Border Classes="card">
-        <Grid RowDefinitions="Auto,Auto,34,*,Auto">
+        <Grid RowDefinitions="Auto,Auto,34,*">
           <Border Classes="panelHead">
             <StackPanel Orientation="Horizontal" Spacing="7">
               <icons:SvgIcon Source="calc"/>
@@ -92,9 +92,6 @@
             </ListBox.ItemTemplate>
           </ListBox>
           <TextBlock Grid.Row="3" Text="Нет подходящих образцов. Измените поиск или фильтр." IsVisible="{Binding Results.NoResults}" HorizontalAlignment="Center" VerticalAlignment="Center" Classes="muted"/>
-          <Border Grid.Row="4" Padding="14">
-            <TextBlock Text="Выберите строку, чтобы открыть образец в редакторе мутаций. Поиск работает по имени и исходному содержимому." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
-          </Border>
         </Grid>
       </Border>
       <Grid Grid.Column="1" RowDefinitions="*,Auto" RowSpacing="12">
