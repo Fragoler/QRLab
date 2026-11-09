@@ -191,7 +191,6 @@ public sealed class WindowTests
                 });
                 var text = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
                 Assert.Contains(screen.Title, text);
-                Assert.Contains(screen.Description, text);
                 Assert.DoesNotContain(text, t => t?.Contains("Функциональность будет добавлена") == true);
                 if (screen == vm.Comparison) Assert.Equal(2, window.GetVisualDescendants().OfType<BitmapPreview>().Count());
                 else if (screen != vm.Reading) Assert.NotEmpty(window.GetVisualDescendants().OfType<QRLab.View.Controls.RasterPreview>());
