@@ -44,7 +44,7 @@
           <Border Classes="panelHead">
             <StackPanel Orientation="Horizontal" Spacing="7">
               <icons:SvgIcon Source="calc"/>
-              <TextBlock Text="Результаты распознавания" Classes="heading"/>
+              <TextBlock Text="Результаты" Classes="heading"/>
             </StackPanel>
           </Border>
           <Grid Grid.Row="1" ColumnDefinitions="Auto,*" Margin="10" ColumnSpacing="12">
@@ -102,9 +102,9 @@
           <TabControl Name="RecognitionPanels" SelectedIndex="0" Padding="0">
             <TabItem>
               <TabItem.Header>
-                <Grid Width="130" ColumnDefinitions="Auto,*" ColumnSpacing="7">
+                <Grid Width="120" ColumnDefinitions="Auto,*" ColumnSpacing="10" Margin="7 0 7 0">
                   <icons:SvgIcon Source="layers"/>
-                  <TextBlock Grid.Column="1" Text="Сводка распознавания" TextWrapping="Wrap" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="Сводка" TextWrapping="Wrap" FontSize="12"/>
                 </Grid>
               </TabItem.Header>
               <ScrollViewer>
@@ -124,9 +124,9 @@
             </TabItem>
             <TabItem>
               <TabItem.Header>
-                <Grid Width="140" ColumnDefinitions="Auto,*" ColumnSpacing="7">
+                <Grid Width="120" ColumnDefinitions="Auto,*" ColumnSpacing="10" Margin="7 0 7 0">
                   <icons:SvgIcon Source="config"/>
-                  <TextBlock Grid.Column="1" Text="Параметры распознавания" TextWrapping="Wrap" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="Параметры" TextWrapping="Wrap" FontSize="12"/>
                 </Grid>
               </TabItem.Header>
               <ScrollViewer>
