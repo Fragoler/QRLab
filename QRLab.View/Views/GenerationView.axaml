@@ -172,9 +172,8 @@
             <TextBlock Text="Пакетная очередь" Classes="heading"/>
           </Border>
           <StackPanel Grid.Row="1" Margin="14" Spacing="10">
-            <Grid ColumnDefinitions="*,Auto">
+            <Grid ColumnDefinitions="*">
               <TextBlock Text="{Binding Workspace.SetName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-              <TextBlock Grid.Column="1" Text="Подготовлен" Classes="accent" FontSize="10"/>
             </Grid>
             <ProgressBar Minimum="0" Maximum="1" Value="1" Height="3" Foreground="#75D9BE"/>
             <TextBlock Text="{Binding Workspace.Position}" Classes="muted"/>
