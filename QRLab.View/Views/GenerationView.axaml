@@ -19,7 +19,6 @@
     <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16">
       <StackPanel Spacing="4">
         <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"/>
-        <TextBlock Text="{Binding Description}" Classes="muted"/>
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
         <Button Command="{Binding OpenLibraryCommand}">
@@ -143,7 +142,7 @@
       </Border>
       <Grid Grid.Column="1" RowDefinitions="*,170" RowSpacing="12">
         <Border Classes="card" ClipToBounds="True">
-          <Grid RowDefinitions="*,40,52">
+          <Grid RowDefinitions="*,40">
             <Border Grid.Row="0" Background="#0D1112" Padding="30">
               <c:RasterPreview x:Name="GenerationPreview" Image="{Binding Workspace.SelectedSample.Image}" AllowZoom="True"/>
             </Border>
@@ -151,27 +150,12 @@
               <TextBlock Text="ЛКМ — перемещение  •  Колесо — масштаб" Classes="muted" FontSize="10"/>
               <Button x:Name="ResetGenerationViewport" Grid.Column="1" Content="Сбросить вид" Classes="flat" Command="{Binding #GenerationPreview.ResetViewCommand}"/>
             </Grid>
-            <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto" Margin="14,0">
-              <TextBlock Text="{Binding Workspace.SelectedSample.Name}" Classes="mono"/>
-              <Button Grid.Column="1" Classes="flat" Command="{Binding Workspace.PreviousCommand}" ToolTip.Tip="Предыдущий образец">
-                <StackPanel Orientation="Horizontal" Spacing="7">
-                  <icons:SvgIcon Source="arrow-right" Width="12" Height="12" RenderTransform="rotate(180deg)" RenderTransformOrigin="50%,50%"/>
-                </StackPanel>
-              </Button>
-              <TextBlock Grid.Column="2" Text="{Binding Workspace.Position}" Classes="muted" Margin="10,0"/>
-              <Button Grid.Column="3" Classes="flat" Command="{Binding Workspace.NextCommand}" ToolTip.Tip="Следующий образец">
-                <StackPanel Orientation="Horizontal" Spacing="7">
-                  <icons:SvgIcon Source="arrow-right" Width="12" Height="12"/>
-                </StackPanel>
-              </Button>
-            </Grid>
           </Grid>
         </Border>
         <Border Grid.Row="1" Classes="card">
           <StackPanel Margin="16" Spacing="10">
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Text="Содержимое образца" Classes="heading"/>
-              <TextBlock Grid.Column="1" Text="Готов к мутациям" Classes="accent" FontSize="10"/>
             </Grid>
             <TextBlock Text="{Binding Workspace.SelectedSample.Content}" FontSize="20" Classes="mono"/>
             <StackPanel Orientation="Horizontal" Spacing="18">
@@ -179,7 +163,6 @@
               <TextBlock Text="{Binding Workspace.SelectedSample.Dimensions}" Classes="muted"/>
               <TextBlock Text="{x:Static images:RasterImage.FormatName}" Classes="muted"/>
             </StackPanel>
-            <TextBlock Text="Исходник защищён. Изменения образуют отдельную цепочку кадров." Classes="muted" TextWrapping="Wrap"/>
           </StackPanel>
         </Border>
       </Grid>

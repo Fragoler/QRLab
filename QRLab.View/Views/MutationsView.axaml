@@ -12,7 +12,6 @@
     <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16">
       <StackPanel Spacing="4">
         <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"/>
-        <TextBlock Text="{Binding Description}" Classes="muted"/>
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
         <Button Content="Отменить" Command="{Binding UndoCommand}"/>

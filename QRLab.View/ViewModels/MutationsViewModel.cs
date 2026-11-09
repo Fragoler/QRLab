@@ -52,7 +52,7 @@ public sealed partial class MutationsViewModel : ScreenViewModel, IDisposable
     public bool CanRedo => _sample?.State.Mutations.CanRedo == true;
 
     public MutationsViewModel(Workspace.WorkspaceViewModel workspace, MutationService service)
-        : base("02", "Мутации", "Редактор искажений / цепочка операций")
+        : base("02", "Мутации")
     {
         Workspace = workspace;
         _service = service;
