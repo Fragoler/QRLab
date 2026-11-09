@@ -1,0 +1,100 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:QRLab.View.ViewModels"
+             xmlns:c="using:QRLab.View.Controls"
+             x:Class="QRLab.View.Views.ComparisonView"
+             x:DataType="vm:ComparisonViewModel">
+  <Grid Margin="18" RowDefinitions="Auto,*" RowSpacing="16">
+    <Grid ColumnDefinitions="*,Auto">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"/>
+        <TextBlock Text="{Binding Description}" Classes="muted"/>
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+        <Button Content="← Предыдущий" Command="{Binding Workspace.PreviousCommand}"/>
+        <TextBlock Text="{Binding Workspace.Position}" Classes="mono"/>
+        <Button Content="Следующий →" Command="{Binding Workspace.NextCommand}"/>
+      </StackPanel>
+    </Grid>
+    <Grid Grid.Row="1" ColumnDefinitions="*,280" ColumnSpacing="12">
+      <Grid RowDefinitions="*,Auto,Auto" RowSpacing="12">
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+          <Border Classes="card">
+            <Grid RowDefinitions="Auto,*,Auto">
+              <Border Classes="panelHead"><TextBlock Text="А · Матрица энкодера" Classes="heading"/></Border>
+              <c:BitmapPreview Grid.Row="1" Name="OriginalBitmapPreview" Image="{Binding OriginalBitmap}" Zoom="{Binding Zoom, Mode=TwoWay}" PanOffset="{Binding PanOffset, Mode=TwoWay}" Margin="16" MinHeight="180"/>
+              <TextBlock Grid.Row="1" Name="OriginalMatrixPlaceholder" IsVisible="{Binding !HasOriginalBitmap}" Text="Нет матрицы энкодера" Classes="muted" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="16"/>
+              <Border Grid.Row="2" Padding="12"><TextBlock Text="{Binding OriginalDimensions}" Classes="muted"/></Border>
+            </Grid>
+          </Border>
+          <Border Grid.Column="1" Classes="card">
+            <Grid RowDefinitions="Auto,*,Auto">
+              <Border Classes="panelHead"><TextBlock Text="Б · Матрица детектора" Classes="heading"/></Border>
+              <c:BitmapPreview Grid.Row="1" Name="FinalBitmapPreview" Image="{Binding FinalBitmap}" Reference="{Binding OriginalBitmap}" HighlightChanges="{Binding HighlightChanges}" Zoom="{Binding Zoom, Mode=TwoWay}" PanOffset="{Binding PanOffset, Mode=TwoWay}" Margin="16" MinHeight="180"/>
+              <TextBlock Grid.Row="1" Name="FinalMatrixPlaceholder" IsVisible="{Binding !HasFinalBitmap}" Text="{Binding FinalPlaceholder}" Classes="muted" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="16"/>
+              <Border Grid.Row="2" Padding="12"><TextBlock Text="{Binding FinalDimensions}" Classes="muted"/></Border>
+            </Grid>
+          </Border>
+        </Grid>
+        <Border Grid.Row="1" Classes="card" Padding="12">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+            <TextBlock Text="ЛКМ • колесо" Classes="muted"/>
+            <TextBlock Grid.Column="1" Text="{Binding ZoomLabel}" Width="48"/>
+            <Button Grid.Column="2" Content="Сбросить вид" Command="{Binding ResetZoomCommand}"/>
+          </Grid>
+        </Border>
+        <Border Grid.Row="2" Classes="card">
+          <StackPanel>
+            <Border Classes="panelHead"><TextBlock Text="Изменённые модули и данные распознавания" Classes="heading"/></Border>
+            <StackPanel Margin="14" Spacing="9">
+              <TextBlock Text="{Binding Summary}" Classes="accent"/>
+              <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="20" RowSpacing="6" IsVisible="{Binding CanCompare}">
+                <TextBlock Text="{Binding Comparison.AddedBlack, StringFormat='Белый → чёрный: {0:N0}'}" Foreground="#37C3E1"/>
+                <TextBlock Grid.Column="1" Text="{Binding Comparison.RemovedBlack, StringFormat='Чёрный → белый: {0:N0}'}" Foreground="#F57373"/>
+                <TextBlock Grid.Row="1" Text="{Binding Comparison.OriginalBlack, StringFormat='Чёрных в исходнике: {0:N0}'}"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Comparison.FinalBlack, StringFormat='Чёрных в результате: {0:N0}'}"/>
+                <TextBlock Grid.Row="2" Text="{Binding Comparison.Unchanged, StringFormat='Без изменений: {0:N0}'}" Classes="muted"/>
+              </Grid>
+              <Border Classes="divider"/>
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="Ожидаемое содержимое" Classes="label"/>
+                  <TextBlock Text="{Binding Workspace.SelectedSample.Content}" TextWrapping="Wrap" MaxHeight="40" Classes="mono"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="5">
+                  <TextBlock Text="Распознано" Classes="label"/>
+                  <TextBlock Text="{Binding Workspace.SelectedSample.Decoded}" TextWrapping="Wrap" MaxHeight="40" Classes="mono"/>
+                </StackPanel>
+              </Grid>
+              <TextBlock Text="{Binding Workspace.SelectedSample.Result.Error}" Classes="danger" TextWrapping="Wrap" MaxHeight="32"/>
+              <TextBlock Text="{Binding Workspace.SelectedSample.Status}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding Workspace.SelectedSample.CorrectionStatistics}" Classes="muted" TextWrapping="Wrap"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </Grid>
+      <ScrollViewer Grid.Column="1">
+        <StackPanel Spacing="12">
+          <Border Classes="card">
+            <StackPanel>
+              <Border Classes="panelHead"><TextBlock Text="{Binding Workspace.SelectedSample.Name}" Classes="heading"/></Border>
+              <StackPanel Margin="14" Spacing="10">
+                <TextBlock Text="{Binding Workspace.SelectedSample.Format}" Classes="accent"/>
+                <TextBlock Text="{Binding Workspace.SelectedSample.Chain}" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding Workspace.SelectedSample.Time, StringFormat='Обработка: {0}'}" Classes="muted"/>
+                <Button Content="Открыть в мутациях →" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).NavigateCommand}" CommandParameter="02"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+          <Border Classes="card" Padding="14">
+            <StackPanel Spacing="10">
+              <CheckBox Content="Подсветить изменения" IsChecked="{Binding HighlightChanges}" IsEnabled="{Binding CanCompare}"/>
+              <Button Content="Считать и распознать набор" Classes="primary" Command="{Binding Reading.RunCommand}"/>
+              <Button Content="Остановить" IsVisible="{Binding Reading.IsBusy}" Command="{Binding Reading.RunCancelCommand}"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</UserControl>

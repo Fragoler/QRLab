@@ -24,9 +24,16 @@ public static class ApplicationViewModels
         var mutationService = new MutationService(state, mutations);
         var recognition = new RecognitionService(state, recognizer);
         generation.Generate(new QrGenerationOptions());
+
         var workspace = new WorkspaceViewModel(state);
+
+        var generationVm = new GenerationViewModel(workspace, generation, sampleStorage);
+        var mutationsVm = new MutationsViewModel(workspace, mutationService);
+        var readingVm = new ReadingViewModel(workspace, recognition, reportExporter);
+        var comparisonVm = new ComparisonViewModel(workspace, readingVm);
+        
         workspace.ShowNotice($"Подготовлено {workspace.SampleCount} образцов");
-        return new(workspace, new GenerationViewModel(workspace, generation, sampleStorage),
-            new MutationsViewModel(workspace, mutationService), new ReadingViewModel(workspace, recognition, reportExporter));
+        
+        return new MainWindowViewModel(workspace, generationVm, mutationsVm, readingVm, comparisonVm);
     }
 }

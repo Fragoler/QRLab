@@ -18,15 +18,31 @@ public sealed partial class RecognitionResultsViewModel : ObservableObject, IDis
     [ObservableProperty] private SampleViewModel? _selectedResult;
 
     public IReadOnlyList<SampleViewModel> Items => _workspace.Samples.Where(sample =>
-        (Filter == RecognitionFilter.All || Filter == RecognitionFilter.Successful && sample.IsSuccess
-            || Filter == RecognitionFilter.Failed && sample.IsFailure)
+        (Filter switch
+        {
+            RecognitionFilter.All => true,
+            RecognitionFilter.NotRecognized => sample.Result is null,
+            RecognitionFilter.NotFound => sample.Result?.Status == Status.NotFound,
+            RecognitionFilter.Failed => sample.Result?.Status == Status.Failed,
+            RecognitionFilter.Successful => sample.IsSuccess,
+            RecognitionFilter.Mismatch => sample.IsMismatch,
+            RecognitionFilter.Timeout => sample.Result?.Status == Status.Timeout,
+            _ => false
+        })
         && (sample.Name.Contains(Search, StringComparison.OrdinalIgnoreCase)
             || sample.Content.Contains(Search, StringComparison.OrdinalIgnoreCase)
             || (sample.Result?.DecodedContent?.Contains(Search, StringComparison.OrdinalIgnoreCase) ?? false))).ToArray();
     public bool NoResults => Items.Count == 0;
     public int Checked => _workspace.Samples.Count(sample => sample.Result is not null);
     public int Success => _workspace.Samples.Count(sample => sample.IsSuccess);
-    public int Failed => _workspace.Samples.Count(sample => sample.Result?.Status is Status.Failed or Status.Mismatch);
+    public int Failed => _workspace.Samples.Count(sample => sample.IsFailure || sample.IsMismatch);
+    public int NotRecognized => _workspace.Samples.Count - Checked;
+    public int NotFound => _workspace.Samples.Count(sample => sample.Result?.Status == Status.NotFound);
+    public int Undecoded => _workspace.Samples.Count(sample => sample.Result?.Status == Status.Failed);
+    public int Mismatch => _workspace.Samples.Count(sample => sample.IsMismatch);
+    public int CorrectedCodewords => _workspace.Samples.Sum(sample => sample.Result?.CorrectedCodewords ?? 0);
+    public int SamplesWithCorrection => _workspace.Samples.Count(sample => sample.Result?.CorrectedCodewords > 0);
+    public bool HasCorrectionStatistics => _workspace.Samples.Any(sample => sample.Result?.CorrectedCodewords is not null);
     public int Timeout => _workspace.Samples.Count(sample => sample.Result?.Status == Status.Timeout);
     public string Average => Checked == 0 ? "—" : $"{_workspace.Samples.Where(sample => sample.Result is not null).Average(sample => sample.Result!.Milliseconds):N1} мс";
     public string Rate => Checked == 0 ? "Нет результатов" : $"{100d * Success / Checked:N1}% от проверенных";
@@ -72,6 +88,13 @@ public sealed partial class RecognitionResultsViewModel : ObservableObject, IDis
         OnPropertyChanged(nameof(Checked));
         OnPropertyChanged(nameof(Success));
         OnPropertyChanged(nameof(Failed));
+        OnPropertyChanged(nameof(NotRecognized));
+        OnPropertyChanged(nameof(NotFound));
+        OnPropertyChanged(nameof(Undecoded));
+        OnPropertyChanged(nameof(Mismatch));
+        OnPropertyChanged(nameof(CorrectedCodewords));
+        OnPropertyChanged(nameof(SamplesWithCorrection));
+        OnPropertyChanged(nameof(HasCorrectionStatistics));
         OnPropertyChanged(nameof(Timeout));
         OnPropertyChanged(nameof(Average));
         OnPropertyChanged(nameof(Rate));
