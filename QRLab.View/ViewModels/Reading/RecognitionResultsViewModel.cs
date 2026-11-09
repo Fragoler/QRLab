@@ -45,7 +45,6 @@ public sealed partial class RecognitionResultsViewModel : ObservableObject, IDis
     public bool HasCorrectionStatistics => _workspace.Samples.Any(sample => sample.Result?.CorrectedCodewords is not null);
     public int Timeout => _workspace.Samples.Count(sample => sample.Result?.Status == Status.Timeout);
     public string Average => Checked == 0 ? "—" : $"{_workspace.Samples.Where(sample => sample.Result is not null).Average(sample => sample.Result!.Milliseconds):N1} мс";
-    public string Rate => Checked == 0 ? "Нет результатов" : $"{100d * Success / Checked:N1}% от проверенных";
 
     public RecognitionResultsViewModel(WorkspaceViewModel workspace)
     {
@@ -97,7 +96,6 @@ public sealed partial class RecognitionResultsViewModel : ObservableObject, IDis
         OnPropertyChanged(nameof(HasCorrectionStatistics));
         OnPropertyChanged(nameof(Timeout));
         OnPropertyChanged(nameof(Average));
-        OnPropertyChanged(nameof(Rate));
     }
     public void Dispose()
     {

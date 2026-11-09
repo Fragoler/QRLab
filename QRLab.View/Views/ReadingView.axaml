@@ -6,9 +6,11 @@
              xmlns:r="clr-namespace:QRLab.Core.Models.Recognition;assembly=QRLab.Core"
              xmlns:samples="clr-namespace:QRLab.View.ViewModels.Samples"
              xmlns:common="clr-namespace:QRLab.View.ViewModels.Common"
+             xmlns:converters="using:QRLab.View.Converters"
              x:Class="QRLab.View.Views.ReadingView"
              x:DataType="vm:ReadingViewModel">
   <UserControl.Resources>
+    <converters:RecognitionStatusBrushConverter x:Key="RecognitionStatusBrush"/>
     <DataTemplate x:Key="RecognitionChoiceTemplate" x:DataType="common:EnumOption"><TextBlock Text="{Binding Name}"/></DataTemplate>
   </UserControl.Resources>
   <Grid Margin="18" RowDefinitions="Auto,Auto,*" RowSpacing="12">
@@ -33,7 +35,6 @@
     </Grid>
     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="24">
       <TextBlock Text="{Binding Results.Checked, StringFormat=Обработано: {0}}" Classes="muted"/>
-      <TextBlock Text="{Binding Results.Rate}" Classes="accent"/>
       <TextBlock Text="{Binding Results.Average, StringFormat=Среднее: {0}}" Classes="muted"/>
       <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Width="100" Height="3"/>
     </StackPanel>
@@ -82,7 +83,10 @@
               <DataTemplate x:DataType="samples:SampleViewModel">
                 <Grid ColumnDefinitions="90,175,*,135,65" MinHeight="36">
                   <TextBlock Text="{Binding Name}" Classes="mono" FontSize="11"/>
-                  <TextBlock Grid.Column="1" Text="{Binding Status}" FontSize="10" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                  <Grid Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <Border Background="{Binding Result, Converter={StaticResource RecognitionStatusBrush}}" Opacity="0.16" CornerRadius="4"/>
+                    <TextBlock Text="{Binding Status}" Foreground="{Binding Result, Converter={StaticResource RecognitionStatusBrush}}" FontSize="10" TextWrapping="Wrap" Padding="8,5"/>
+                  </Grid>
                   <TextBlock Grid.Column="2" Text="{Binding Chain}" FontSize="10" Foreground="#A7B2AF" TextTrimming="CharacterEllipsis" Margin="0,0,10,0"/>
                   <TextBlock Grid.Column="3" Text="{Binding Decoded}" FontSize="10" Classes="mono" TextTrimming="CharacterEllipsis" Margin="0,0,6,0"/>
                   <TextBlock Grid.Column="4" Text="{Binding Time}" FontSize="11" Classes="mono"/>
@@ -105,12 +109,12 @@
               </TabItem.Header>
               <ScrollViewer>
                 <StackPanel Margin="14" Spacing="12">
-                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Не распознавался" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.NotRecognized}"/></Grid>
-                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Код не найден" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.NotFound}" Classes="danger"/></Grid>
-                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Найден, не расшифрован" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.Undecoded}" Classes="danger"/></Grid>
-                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Найден, расшифрован" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.Success}" Classes="accent"/></Grid>
-                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Расшифрован неверно" Foreground="#F1CD70"/><TextBlock Grid.Column="1" Text="{Binding Results.Mismatch}" Foreground="#F1CD70"/></Grid>
-                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Тайм-аут" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.Timeout}" Classes="danger"/></Grid>
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Не распознавался" Foreground="{x:Static converters:RecognitionStatusBrushConverter.NotRecognized}"/><TextBlock Grid.Column="1" Text="{Binding Results.NotRecognized}" Foreground="{x:Static converters:RecognitionStatusBrushConverter.NotRecognized}"/></Grid>
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Код не найден" Foreground="{x:Static converters:RecognitionStatusBrushConverter.NotFound}"/><TextBlock Grid.Column="1" Text="{Binding Results.NotFound}" Foreground="{x:Static converters:RecognitionStatusBrushConverter.NotFound}"/></Grid>
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Найден, не расшифрован" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Undecoded}"/><TextBlock Grid.Column="1" Text="{Binding Results.Undecoded}" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Undecoded}"/></Grid>
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Найден, расшифрован" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Success}"/><TextBlock Grid.Column="1" Text="{Binding Results.Success}" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Success}"/></Grid>
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Расшифрован неверно" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Mismatch}" FontWeight="Bold"/><TextBlock Grid.Column="1" Text="{Binding Results.Mismatch}" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Mismatch}" FontWeight="Bold"/></Grid>
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Тайм-аут" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Timeout}"/><TextBlock Grid.Column="1" Text="{Binding Results.Timeout}" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Timeout}"/></Grid>
                   <StackPanel Spacing="8" IsVisible="{Binding Results.HasCorrectionStatistics}">
                     <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Исправлено кодовых слов" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.CorrectedCodewords}"/></Grid>
                     <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Образцов с исправлениями" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.SamplesWithCorrection}"/></Grid>
@@ -145,7 +149,7 @@
               <TextBlock Text="ЛКМ • колесо" Classes="muted" FontSize="9"/>
               <Button Grid.Column="1" Content="Сбросить вид" Classes="flat" Command="{Binding #ReadingPreview.ResetViewCommand}"/>
             </Grid>
-            <TextBlock Text="{Binding Workspace.SelectedSample.Status}" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding Workspace.SelectedSample.Status}" Foreground="{Binding Workspace.SelectedSample.Result, Converter={StaticResource RecognitionStatusBrush}}" TextWrapping="Wrap"/>
             <TextBlock Text="{Binding Workspace.SelectedSample.CorrectionStatistics}" Classes="muted" TextWrapping="Wrap"/>
             <TextBlock Text="{Binding Workspace.SelectedSample.Content}" Classes="mono" TextTrimming="CharacterEllipsis"/>
             <Button Command="{ReflectionBinding $parent[Window].DataContext.NavigateCommand}" CommandParameter="02" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
