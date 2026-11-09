@@ -38,24 +38,21 @@
       <TextBlock Text="{Binding Results.Average, StringFormat=Среднее: {0}}" Classes="muted"/>
       <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Width="100" Height="3"/>
     </StackPanel>
-    <Grid Grid.Row="2" ColumnDefinitions="*,280" ColumnSpacing="12">
+    <Grid Grid.Row="2" ColumnDefinitions="*,340" ColumnSpacing="12">
       <Border Classes="card">
         <Grid RowDefinitions="Auto,Auto,34,*,Auto">
           <Border Classes="panelHead">
-            <TextBlock Text="Результаты распознавания" Classes="heading"/>
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <icons:SvgIcon Source="calc"/>
+              <TextBlock Text="Результаты распознавания" Classes="heading"/>
+            </StackPanel>
           </Border>
           <Grid Grid.Row="1" ColumnDefinitions="Auto,*" Margin="10" ColumnSpacing="12">
-            <ListBox Classes="tabs" ItemsSource="{Binding Results.Filters}" ItemTemplate="{StaticResource RecognitionChoiceTemplate}" SelectedValue="{Binding Results.Filter, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}">
-              <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <StackPanel Orientation="Horizontal"/>
-                </ItemsPanelTemplate>
-              </ListBox.ItemsPanel>
-            </ListBox>
+            <ComboBox Name="RecognitionStatusFilter" Width="240" ItemsSource="{Binding Results.Filters}" ItemTemplate="{StaticResource RecognitionChoiceTemplate}" SelectedValue="{Binding Results.Filter, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}"/>
             <TextBox Grid.Column="1" Text="{Binding Results.Search, Mode=TwoWay}" PlaceholderText="⌕  Найти образец или содержимое" VerticalAlignment="Center"/>
           </Grid>
           <Border Grid.Row="2" Background="#171C1E" Padding="12,0">
-            <Grid ColumnDefinitions="105,100,*,165,85">
+            <Grid ColumnDefinitions="90,175,*,135,65">
               <TextBlock Text="ОБРАЗЕЦ" Classes="muted" FontSize="9"/>
               <TextBlock Grid.Column="1" Text="РЕЗУЛЬТАТ" Classes="muted" FontSize="9"/>
               <TextBlock Grid.Column="2" Text="ЦЕПОЧКА МУТАЦИЙ" Classes="muted" FontSize="9"/>
@@ -63,23 +60,33 @@
               <TextBlock Grid.Column="4" Text="ВРЕМЯ" Classes="muted" FontSize="9"/>
             </Grid>
           </Border>
-          <ListBox Grid.Row="3" ItemsSource="{Binding Results.Items}" SelectedItem="{Binding Results.SelectedResult, Mode=TwoWay}">
+          <ListBox Name="RecognitionResultsList" Grid.Row="3" ItemsSource="{Binding Results.Items}" SelectedItem="{Binding Results.SelectedResult, Mode=TwoWay}">
+            <ListBox.Styles>
+              <Style Selector="ListBoxItem">
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+              </Style>
+              <Style Selector="ListBoxItem.mismatch">
+                <Setter Property="Background" Value="#493A19"/>
+                <Setter Property="Foreground" Value="#F1CD70"/>
+              </Style>
+              <Style Selector="ListBoxItem.mismatch:selected /template/ ContentPresenter">
+                <Setter Property="Background" Value="#665023"/>
+                <Setter Property="Foreground" Value="#FFE29A"/>
+              </Style>
+            </ListBox.Styles>
+            <ListBox.ItemContainerTheme>
+              <ControlTheme TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}" x:DataType="samples:SampleViewModel">
+                <Setter Property="Classes.mismatch" Value="{Binding IsMismatch}"/>
+              </ControlTheme>
+            </ListBox.ItemContainerTheme>
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="samples:SampleViewModel">
-                <Grid ColumnDefinitions="105,100,*,165,85" MinHeight="28">
+                <Grid ColumnDefinitions="90,175,*,135,65" MinHeight="36">
                   <TextBlock Text="{Binding Name}" Classes="mono" FontSize="11"/>
-                  <Border Grid.Column="1" Background="#293E38" CornerRadius="3" Padding="6,4" HorizontalAlignment="Left">
-                    <TextBlock Text="{Binding Status}" Foreground="#96D3BA" FontSize="10"/>
-                  </Border>
+                  <TextBlock Grid.Column="1" Text="{Binding Status}" FontSize="10" TextWrapping="Wrap" Margin="0,0,8,0"/>
                   <TextBlock Grid.Column="2" Text="{Binding Chain}" FontSize="10" Foreground="#A7B2AF" TextTrimming="CharacterEllipsis" Margin="0,0,10,0"/>
-                  <TextBlock Grid.Column="3" Text="{Binding Decoded}" FontSize="10" Classes="mono"/>
+                  <TextBlock Grid.Column="3" Text="{Binding Decoded}" FontSize="10" Classes="mono" TextTrimming="CharacterEllipsis" Margin="0,0,6,0"/>
                   <TextBlock Grid.Column="4" Text="{Binding Time}" FontSize="11" Classes="mono"/>
-                  <Border Grid.Column="1" IsVisible="{Binding IsFailure}" Background="#422C2C" CornerRadius="3" Padding="6,4" HorizontalAlignment="Left">
-                    <StackPanel Orientation="Horizontal" Spacing="7">
-                      <icons:SvgIcon Source="cross-in-circle" Foreground="#E58A86" Width="11" Height="11"/>
-                      <TextBlock Text="{Binding Status}" Classes="danger" FontSize="10"/>
-                    </StackPanel>
-                  </Border>
                 </Grid>
               </DataTemplate>
             </ListBox.ItemTemplate>
@@ -91,58 +98,60 @@
         </Grid>
       </Border>
       <Grid Grid.Column="1" RowDefinitions="*,Auto" RowSpacing="12">
-        <ScrollViewer>
-          <StackPanel Spacing="12">
-            <Border Classes="card">
-              <StackPanel>
-                <Border Classes="panelHead">
-                  <StackPanel Orientation="Horizontal" Spacing="7">
-                    <icons:SvgIcon Source="config"/>
-                    <TextBlock Text="Параметры прогона" Classes="heading"/>
+        <Border Classes="card">
+          <TabControl Name="RecognitionPanels" SelectedIndex="0" Padding="0">
+            <TabItem>
+              <TabItem.Header>
+                <Grid Width="130" ColumnDefinitions="Auto,*" ColumnSpacing="7">
+                  <icons:SvgIcon Source="layers"/>
+                  <TextBlock Grid.Column="1" Text="Сводка распознавания" TextWrapping="Wrap" FontSize="12"/>
+                </Grid>
+              </TabItem.Header>
+              <ScrollViewer>
+                <StackPanel Margin="14" Spacing="12">
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Не распознавался" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.NotRecognized}"/></Grid>
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Код не найден" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.NotFound}" Classes="danger"/></Grid>
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Найден, не расшифрован" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.Undecoded}" Classes="danger"/></Grid>
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Найден, расшифрован" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.Success}" Classes="accent"/></Grid>
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Расшифрован неверно" Foreground="#F1CD70"/><TextBlock Grid.Column="1" Text="{Binding Results.Mismatch}" Foreground="#F1CD70"/></Grid>
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Тайм-аут" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.Timeout}" Classes="danger"/></Grid>
+                  <StackPanel Spacing="8" IsVisible="{Binding Results.HasCorrectionStatistics}">
+                    <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Исправлено кодовых слов" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.CorrectedCodewords}"/></Grid>
+                    <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Образцов с исправлениями" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.SamplesWithCorrection}"/></Grid>
                   </StackPanel>
-                </Border>
+                </StackPanel>
+              </ScrollViewer>
+            </TabItem>
+            <TabItem>
+              <TabItem.Header>
+                <Grid Width="140" ColumnDefinitions="Auto,*" ColumnSpacing="7">
+                  <icons:SvgIcon Source="config"/>
+                  <TextBlock Grid.Column="1" Text="Параметры распознавания" TextWrapping="Wrap" FontSize="12"/>
+                </Grid>
+              </TabItem.Header>
+              <ScrollViewer>
                 <StackPanel Margin="14" Spacing="8">
                   <TextBlock Text="Декодер" Classes="label"/>
                   <TextBlock Text="{x:Static r:RecognitionDefaults.DecoderName}" Classes="accent"/>
                   <TextBlock Text="Тайм-аут, мс" Classes="label"/>
                   <NumericUpDown Value="{Binding Settings.Timeout, Mode=TwoWay}" Minimum="{Binding Settings.TimeoutRange.Minimum}" Maximum="{Binding Settings.TimeoutRange.Maximum}" Increment="50"/>
                   <CheckBox Content="Усиленный поиск" IsChecked="{Binding Settings.Enhanced, Mode=TwoWay}" FontSize="11"/>
-                  <Border Classes="divider"/>
-                  <TextBlock Text="Настройки применяются при запуске нового прогона." Classes="muted" TextWrapping="Wrap" FontSize="10"/>
                 </StackPanel>
-              </StackPanel>
-            </Border>
-            <Border Classes="card">
-              <StackPanel Margin="14" Spacing="12">
-                <TextBlock Text="Сводка распознавания" Classes="heading"/>
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Text="Ошибки" Classes="muted"/>
-                  <TextBlock Grid.Column="1" Text="{Binding Results.Failed}" Classes="danger"/>
-                </Grid>
-                <ProgressBar Maximum="{Binding Workspace.Samples.Count}" Value="{Binding Results.Failed}" Foreground="#E58A86" Height="4"/>
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Text="Тайм-аут" Classes="muted"/>
-                  <TextBlock Grid.Column="1" Text="{Binding Results.Timeout}" Classes="danger"/>
-                </Grid>
-                <ProgressBar Maximum="{Binding Workspace.Samples.Count}" Value="{Binding Results.Timeout}" Foreground="#E58A86" Height="4"/>
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Text="Успешно считано" Classes="muted"/>
-                  <TextBlock Grid.Column="1" Text="{Binding Results.Success}" Classes="accent"/>
-                </Grid>
-                <ProgressBar Maximum="{Binding Workspace.Samples.Count}" Value="{Binding Results.Success}" Foreground="#75D9BE" Height="4"/>
-              </StackPanel>
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
+              </ScrollViewer>
+            </TabItem>
+          </TabControl>
+        </Border>
         <Border Background="#244039" CornerRadius="5" Padding="16" Grid.Row="1">
-          <StackPanel Spacing="12">
+          <StackPanel Spacing="8">
             <TextBlock Text="{Binding Workspace.SelectedSample.Name}" Classes="accent"/>
-            <c:RasterPreview x:Name="ReadingPreview" Image="{Binding Workspace.SelectedSample.Image}" Height="145" AllowZoom="True"/>
+            <c:RasterPreview x:Name="ReadingPreview" Image="{Binding Workspace.SelectedSample.Image}" Height="110" AllowZoom="True"/>
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Text="ЛКМ • колесо" Classes="muted" FontSize="9"/>
               <Button Grid.Column="1" Content="Сбросить вид" Classes="flat" Command="{Binding #ReadingPreview.ResetViewCommand}"/>
             </Grid>
-            <TextBlock Text="{Binding Workspace.SelectedSample.Content}" Classes="mono"/>
+            <TextBlock Text="{Binding Workspace.SelectedSample.Status}" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding Workspace.SelectedSample.CorrectionStatistics}" Classes="muted" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding Workspace.SelectedSample.Content}" Classes="mono" TextTrimming="CharacterEllipsis"/>
             <Button Command="{ReflectionBinding $parent[Window].DataContext.NavigateCommand}" CommandParameter="02" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
               <StackPanel Orientation="Horizontal" Spacing="7">
                 <icons:SvgIcon Source="arrow-right"/>

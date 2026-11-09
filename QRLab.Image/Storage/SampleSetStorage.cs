@@ -6,13 +6,14 @@ using QRLab.Core.Models.Mutations;
 using QRLab.Core.Models.Samples;
 using QRLab.Core.Models.Storage;
 using QRLab.Image.Storage.Serialization;
+using QRLab.Image.Generation.Encoders;
 
 namespace QRLab.Image.Storage;
 
 public sealed class SampleSetStorage : ISampleSetStorage
 {
     public const string ManifestName = "qrlab-set.json";
-    private const int CurrentVersion = 3;
+    private const int CurrentVersion = 5;
     private const int MaximumManifestBytes = 64 * 1024 * 1024;
     private const int MaximumImageBytes = 512 * 1024 * 1024;
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
@@ -47,7 +48,18 @@ public sealed class SampleSetStorage : ISampleSetStorage
                 var image = WriteImage(sample.Image, prefix + RasterImage.FileExtension);
                 var frames = sample.Frames.Select((frame, frameIndex) => new StoredMutation(frame.Options,
                     WriteImage(frame.Image, $"{prefix}-frame-{frameIndex + 1:0000}{RasterImage.FileExtension}"))).ToArray();
-                return new StoredSample(sample.Number, sample.Name, sample.Content, sample.Settings, image, frames);
+                StoredBitmap? WriteBitmap(BinaryImage? bitmap, string suffix)
+                {
+                    if (bitmap is null) return null;
+                    var name = $"{prefix}-{suffix}.bits";
+                    File.WriteAllBytes(Path.Combine(staging, name), bitmap.Bits.ToArray());
+                    return new(bitmap.Width, bitmap.Height, name);
+                }
+                return new StoredSample(sample.Number, sample.Name, sample.Content, sample.Settings, image, frames)
+                {
+                    OriginalBitmap = WriteBitmap(sample.OriginalBitmap, "original"),
+                    FinalBitmap = WriteBitmap(sample.FinalBitmap, "final")
+                };
             }).ToArray();
             File.WriteAllText(Path.Combine(staging, ManifestName),
                 JsonSerializer.Serialize(new StoredSetDocument(CurrentVersion, stored), JsonOptions));
@@ -75,7 +87,7 @@ public sealed class SampleSetStorage : ISampleSetStorage
                 ?? throw new InvalidDataException("Пустое описание набора.");
         }
         catch (JsonException exception) { throw new InvalidDataException("Описание набора повреждено.", exception); }
-        if (document.Version != CurrentVersion) throw new InvalidDataException("Версия формата набора не поддерживается.");
+        if (document.Version is not (3 or 4 or CurrentVersion)) throw new InvalidDataException("Версия формата набора не поддерживается.");
         if (document.Samples is not { Length: >= GenerationLimits.MinimumCount and <= GenerationLimits.MaximumCount })
             throw new InvalidDataException("Недопустимые параметры набора.");
 
@@ -110,7 +122,33 @@ public sealed class SampleSetStorage : ISampleSetStorage
                     frame.Options.Validate();
                     return new MutationFrame(frame.Options, ReadImage(frame.Image));
                 }).ToArray();
-                return new SamplePreview(stored.Number, stored.Name, stored.Content, original, frames, stored.Settings);
+                BinaryImage? ReadBitmap(StoredBitmap? bitmap)
+                {
+                    if (bitmap is null) return null;
+                    if (bitmap.Width is < 1 or > GenerationLimits.MaximumImageSize || bitmap.Height is < 1 or > GenerationLimits.MaximumImageSize
+                        || string.IsNullOrWhiteSpace(bitmap.File) || bitmap.File != Path.GetFileName(bitmap.File)
+                        || bitmap.File.Contains('\\') || !bitmap.File.EndsWith(".bits", StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidDataException("Некорректные параметры битмапы.");
+                    if (stored.Settings.Kind == CodeKind.QrCode && (bitmap.Width != bitmap.Height
+                        || bitmap.Width is < 21 or > 177 || (bitmap.Width - 21) % 4 != 0))
+                        throw new InvalidDataException("Некорректный размер матрицы модулей QR.");
+                    var path = Path.Combine(directory, bitmap.File);
+                    if (new FileInfo(path).Length != (bitmap.Width * bitmap.Height + 7) / 8)
+                        throw new InvalidDataException("Некорректная длина битмапы.");
+                    return new(bitmap.Width, bitmap.Height, File.ReadAllBytes(path));
+                }
+                return new SamplePreview(stored.Number, stored.Name, stored.Content, original, frames, stored.Settings)
+                {
+                    // Versions 3/4 did not store module matrices (v4 stored raster pixels).
+                    OriginalBitmap = document.Version == CurrentVersion ? ReadBitmap(stored.OriginalBitmap) : RecreateModules(),
+                    FinalBitmap = document.Version == CurrentVersion ? ReadBitmap(stored.FinalBitmap) : null
+                };
+
+                BinaryImage RecreateModules()
+                {
+                    CodeEncoder encoder = stored.Settings.Kind == CodeKind.QrCode ? new QrCodeEncoder() : new BarcodeEncoder();
+                    return ModuleMatrix.FromEncoder(encoder.Encode(stored.Content, stored.Settings), stored.Settings);
+                }
             }).ToArray();
             if (samples.Select(s => s.Number).Distinct().Count() != samples.Length)
                 throw new InvalidDataException("В наборе повторяются номера образцов.");

@@ -22,6 +22,9 @@
     <DataTemplate DataType="{x:Type vm:ReadingViewModel}">
       <views:ReadingView/>
     </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:ComparisonViewModel}">
+      <views:ComparisonView/>
+    </DataTemplate>
   </Window.DataTemplates>
   <Grid RowDefinitions="42,*,30,76">
     <Border x:Name="TitleBar" Background="#1A1F21" BorderBrush="#303839" BorderThickness="0,0,0,1" Padding="12,0" PointerPressed="TitleBarPointerPressed">

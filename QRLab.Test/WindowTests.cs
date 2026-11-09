@@ -27,6 +27,114 @@ public static class TestAppBuilder
 public sealed class WindowTests
 {
     [AvaloniaFact]
+    public async Task RecognitionSummaryOpensFirstAndMismatchRowsAreGold()
+    {
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        vm.Generation.Settings.Count = 2;
+        vm.Generation.GenerateCommand.Execute(null);
+        var samples = vm.Workspace.Samples.Select(sample => sample.Preview).ToArray();
+        samples[0] = samples[0] with { Content = "OTHER" };
+        vm.Workspace.State.Replace("Проверка несовпадений", samples);
+        vm.Reading.Settings.Timeout = 10000;
+        await vm.Reading.RunCommand.ExecuteAsync(null);
+        var window = new MainWindow { DataContext = vm };
+        try
+        {
+            window.Show(); vm.NavigateCommand.Execute("03"); Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            var tabs = window.GetVisualDescendants().OfType<TabControl>().Single(control => control.Name == "RecognitionPanels");
+            Assert.Equal(0, tabs.SelectedIndex);
+            var summary = Assert.IsType<ScrollViewer>(Assert.IsType<TabItem>(tabs.SelectedItem).Content);
+            Assert.True(summary.Extent.Height <= summary.Viewport.Height, $"Сводка не помещается: {summary.Extent.Height} > {summary.Viewport.Height}");
+            var list = window.GetVisualDescendants().OfType<ListBox>().Single(control => control.Name == "RecognitionResultsList");
+            var rows = list.GetVisualDescendants().OfType<ListBoxItem>().ToArray();
+            var mismatch = rows.Single(row => ReferenceEquals(row.DataContext, vm.Workspace.Samples[0]));
+            Assert.Contains("mismatch", mismatch.Classes);
+            Assert.Equal(Color.Parse("#493A19"), Assert.IsAssignableFrom<ISolidColorBrush>(mismatch.Background).Color);
+            var filter = window.GetVisualDescendants().OfType<ComboBox>().Single(control => control.Name == "RecognitionStatusFilter");
+            filter.SelectedItem = vm.Reading.Results.Filters.Single(option => option.Id == RecognitionFilter.Mismatch);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(RecognitionFilter.Mismatch, vm.Reading.Results.Filter);
+            Assert.Single(vm.Reading.Results.Items);
+            if (Environment.GetEnvironmentVariable("QRLAB_CAPTURE") is { } directory)
+            {
+                Directory.CreateDirectory(directory);
+                using var bitmap = new RenderTargetBitmap(new PixelSize(1440, 940), new Vector(96, 96));
+                bitmap.Render(window); using var output = File.Create(Path.Combine(directory, "reading-statuses.png"));
+                bitmap.Save(output, PngBitmapEncoderOptions.Default);
+            }
+            tabs.SelectedIndex = 1; Dispatcher.UIThread.RunJobs();
+            Assert.Contains(window.GetVisualDescendants().OfType<NumericUpDown>(), control => control.IsEffectivelyVisible);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public async Task ComparisonDisplaysBinaryPixelsAndInspectsTheSharedSample()
+    {
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        vm.Generation.Settings.Count = 2;
+        vm.Generation.Settings.ImageWidth = vm.Generation.Settings.ImageHeight = 256;
+        vm.Generation.GenerateCommand.Execute(null);
+        var samples = vm.Workspace.Samples.Select(sample => sample.Preview).ToArray();
+        samples[0] = samples[0] with { Frames = [new(new GaussianBlurOptions(), BitmapComparisonTests.ChangedModuleImage(samples[0], 1))] };
+        vm.Workspace.State.Replace("Матрицы QR", samples);
+        vm.Reading.Settings.Timeout = 10000;
+        var window = new MainWindow { DataContext = vm };
+        try
+        {
+            window.Show(); vm.NavigateCommand.Execute("04"); Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            var originalPlaceholder = window.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Name == "OriginalMatrixPlaceholder");
+            var finalPlaceholder = window.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Name == "FinalMatrixPlaceholder");
+            Assert.False(originalPlaceholder.IsVisible);
+            Assert.True(finalPlaceholder.IsVisible);
+            Assert.Empty(window.GetVisualDescendants().OfType<Slider>());
+            await vm.Reading.RunCommand.ExecuteAsync(null);
+            Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            Assert.False(originalPlaceholder.IsVisible);
+            Assert.False(finalPlaceholder.IsVisible);
+            var previews = window.GetVisualDescendants().OfType<BitmapPreview>().ToArray();
+            Assert.Equal(2, previews.Length);
+            Assert.All(previews, preview => Assert.NotNull(preview.Image));
+            Assert.True(vm.Comparison.Comparison!.Changed > 0);
+            vm.Comparison.HighlightChanges = true;
+            Dispatcher.UIThread.RunJobs();
+            var final = previews.Single(preview => preview.Name == "FinalBitmapPreview");
+            Assert.True(final.HighlightChanges);
+            var center = final.TranslatePoint(new Point(final.Bounds.Width / 2, final.Bounds.Height / 2), window)!.Value;
+            window.MouseDown(center, MouseButton.Left); window.MouseUp(center, MouseButton.Left);
+            Assert.Equal(default, final.PanOffset);
+            window.MouseWheel(center, new Vector(0, 2));
+            Dispatcher.UIThread.RunJobs();
+            Assert.All(previews, preview => Assert.Equal(1.2, preview.Zoom));
+            var moved = center + new Vector(35, 20);
+            window.MouseDown(center, MouseButton.Left); window.MouseMove(moved); window.MouseUp(moved, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            Assert.All(previews, preview => Assert.Equal(new Vector(35, 20), preview.PanOffset));
+            var original = previews.Single(preview => preview.Name == "OriginalBitmapPreview");
+            var originalCenter = original.TranslatePoint(new Point(original.Bounds.Width / 2, original.Bounds.Height / 2), window)!.Value;
+            window.MouseWheel(originalCenter, new Vector(0, -1)); Dispatcher.UIThread.RunJobs();
+            Assert.All(previews, preview => Assert.Equal(1.1, preview.Zoom, 6));
+            vm.Comparison.ResetZoomCommand.Execute(null); Dispatcher.UIThread.RunJobs();
+            Assert.All(previews, preview => { Assert.Equal(1, preview.Zoom); Assert.Equal(default, preview.PanOffset); });
+            if (Environment.GetEnvironmentVariable("QRLAB_CAPTURE") is { } directory)
+            {
+                Directory.CreateDirectory(directory);
+                using var bitmap = new RenderTargetBitmap(new PixelSize(1440, 940), new Vector(96, 96));
+                bitmap.Render(window);
+                using var output = File.Create(Path.Combine(directory, "comparison-populated.png"));
+                bitmap.Save(output, PngBitmapEncoderOptions.Default);
+            }
+            vm.Workspace.NextCommand.Execute(null); Dispatcher.UIThread.RunJobs();
+            Assert.Equal(0, vm.Comparison.Comparison!.Changed);
+            Assert.Same(vm.Workspace.SelectedSample!.State.FinalBitmap, final.Image);
+            vm.Mutations.AddCommand.Execute(MutationKind.GaussianBlur); Dispatcher.UIThread.RunJobs();
+            Assert.False(originalPlaceholder.IsVisible);
+            Assert.True(finalPlaceholder.IsVisible);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
     public void LogoMenuControlsBorderlessWindow()
     {
         var window = new MainWindow { DataContext = TestApplicationFactory.CreateMainWindow() };
@@ -72,7 +180,7 @@ public sealed class WindowTests
                 window.UpdateLayout();
                 Assert.Same(screen, vm.SelectedScreen);
                 var navIcons = navigation.GetVisualDescendants().OfType<SvgIcon>().ToArray();
-                Assert.Equal(3, navIcons.Length);
+                Assert.Equal(4, navIcons.Length);
                 Assert.All(navIcons, icon =>
                 {
                     var item = icon.GetVisualAncestors().OfType<ListBoxItem>().First();
@@ -85,7 +193,8 @@ public sealed class WindowTests
                 Assert.Contains(screen.Title, text);
                 Assert.Contains(screen.Description, text);
                 Assert.DoesNotContain(text, t => t?.Contains("Функциональность будет добавлена") == true);
-                if (screen != vm.Reading) Assert.NotEmpty(window.GetVisualDescendants().OfType<QRLab.View.Controls.RasterPreview>());
+                if (screen == vm.Comparison) Assert.Equal(2, window.GetVisualDescendants().OfType<BitmapPreview>().Count());
+                else if (screen != vm.Reading) Assert.NotEmpty(window.GetVisualDescendants().OfType<QRLab.View.Controls.RasterPreview>());
                 if (Environment.GetEnvironmentVariable("QRLAB_CAPTURE") is { } directory)
                 {
                     Directory.CreateDirectory(directory);
@@ -230,7 +339,7 @@ public sealed class WindowTests
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(120, vm.Reading.Results.Checked);
             var selected = vm.Workspace.SelectedSample;
-            vm.Reading.Results.Filter = RecognitionFilter.Failed; vm.Reading.Results.Search = "no-match";
+            vm.Reading.Results.Filter = RecognitionFilter.NotFound; vm.Reading.Results.Search = "no-match";
             Dispatcher.UIThread.RunJobs();
             Assert.Same(selected, vm.Workspace.SelectedSample);
             vm.NavigateCommand.Execute("01"); Dispatcher.UIThread.RunJobs();

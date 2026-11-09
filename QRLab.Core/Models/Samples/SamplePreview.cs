@@ -11,4 +11,8 @@ public sealed record SamplePreview(
     RasterImage Image,
     IReadOnlyList<MutationFrame> Frames, 
     GenerationOptions Settings
-    );
+    )
+{
+    public BinaryImage? OriginalBitmap { get; init; }
+    public BinaryImage? FinalBitmap { get; init; }
+}

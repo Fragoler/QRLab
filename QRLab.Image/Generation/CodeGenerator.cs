@@ -31,7 +31,11 @@ public sealed class CodeGenerator : ICodeGenerator
                 if (matrix.Width > options.Width || matrix.Height > options.Height)
                     throw new ArgumentException($"Увеличьте размер изображения минимум до {matrix.Width} × {matrix.Height} пикселей.");
                 var image = _renderer.Render(matrix, options);
-                result.Add(new SamplePreview(number, options.GetSampleName(number), content, image, [], options));
+                result.Add(
+                    new SamplePreview(number, options.GetSampleName(number), content, image, [], options)
+                    {
+                        OriginalBitmap = ModuleMatrix.FromEncoder(matrix, options)
+                    });
             }
             catch (Exception exception) when (exception is ArgumentException or WriterException)
             {

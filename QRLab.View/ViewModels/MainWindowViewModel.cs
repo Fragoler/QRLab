@@ -9,18 +9,22 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public Generation.GenerationViewModel Generation { get; }
     public MutationsViewModel Mutations { get; }
     public ReadingViewModel Reading { get; }
+    public ComparisonViewModel Comparison { get; }
+    
     public IReadOnlyList<ScreenViewModel> Screens { get; }
+    
     [ObservableProperty] private ScreenViewModel _selectedScreen;
     [ObservableProperty] private bool _isAboutOpen;
 
     public MainWindowViewModel(Workspace.WorkspaceViewModel workspace, Generation.GenerationViewModel generation,
-        MutationsViewModel mutations, ReadingViewModel reading)
+        MutationsViewModel mutations, ReadingViewModel reading, ComparisonViewModel comparison)
     {
         Workspace = workspace;
         Generation = generation;
         Mutations = mutations;
         Reading = reading;
-        Screens = [Generation, Mutations, Reading];
+        Comparison = comparison;
+        Screens = [Generation, Mutations, Reading, Comparison];
         _selectedScreen = Generation;
     }
     [RelayCommand] private void Navigate(string number) => SelectedScreen = Screens.First(screen => screen.Number == number);
@@ -28,6 +32,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         Reading.Dispose();
+        Comparison.Dispose();
         Mutations.Dispose();
         Workspace.Dispose();
     }
