@@ -7,7 +7,7 @@ namespace QRLab.View.ViewModels.Generation;
 
 public sealed partial class GenerationViewModel(
     Workspace.WorkspaceViewModel workspace, GenerationService generation, SampleStorageService storage)
-    : ScreenViewModel("01", "Генерация кодов", "Создание кодов и управление наборами")
+    : ScreenViewModel("01", "Генерация кодов")
 {
     public Workspace.WorkspaceViewModel Workspace { get; } = workspace;
     public GenerationSettingsViewModel Settings { get; } = new();

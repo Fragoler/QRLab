@@ -7,32 +7,26 @@ using QRLab.View.ViewModels.Reading;
 
 namespace QRLab.View.ViewModels;
 
-public sealed partial class ReadingViewModel : ScreenViewModel, IDisposable
+public sealed partial class ReadingViewModel(
+    Workspace.WorkspaceViewModel workspace,
+    RecognitionService recognition,
+    IRecognitionReportExporter exporter)
+    : ScreenViewModel("03", "Считывание"), IDisposable
 {
-    private readonly RecognitionService _recognition;
-    private readonly IRecognitionReportExporter _exporter;
-    public Workspace.WorkspaceViewModel Workspace { get; }
+    public Workspace.WorkspaceViewModel Workspace { get; } = workspace;
     public RecognitionSettingsViewModel Settings { get; } = new();
-    public RecognitionResultsViewModel Results { get; }
+    public RecognitionResultsViewModel Results { get; } = new(workspace);
     [ObservableProperty] private bool _isExportOpen;
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private bool _isExporting;
     [ObservableProperty] private string _exportDestination = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "QRLab", "results.csv");
 
-    public ReadingViewModel(Workspace.WorkspaceViewModel workspace, RecognitionService recognition, IRecognitionReportExporter exporter)
-        : base("03", "Считывание", "Декодирование изображений и экспорт результатов")
-    {
-        Workspace = workspace;
-        _recognition = recognition;
-        _exporter = exporter;
-        Results = new(workspace);
-    }
     [RelayCommand(IncludeCancelCommand = true)] private async Task Run(CancellationToken cancellationToken)
     {
         IsBusy = true;
         try
         {
-            var count = await _recognition.RecognizeAsync(Settings.ToOptions(), cancellationToken);
+            var count = await recognition.RecognizeAsync(Settings.ToOptions(), cancellationToken);
             Workspace.ShowNotice($"Обработано {count} образцов");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -49,7 +43,7 @@ public sealed partial class ReadingViewModel : ScreenViewModel, IDisposable
         IsExporting = true;
         try
         {
-            await _exporter.ExportAsync(ExportDestination, rows);
+            await exporter.ExportAsync(ExportDestination, rows);
             Workspace.ShowNotice($"CSV сохранён: {ExportDestination}");
             IsExportOpen = false;
         }

@@ -35,7 +35,7 @@ public sealed partial class ComparisonViewModel : ScreenViewModel, IDisposable
     partial void OnZoomChanged(double value) => OnPropertyChanged(nameof(ZoomLabel));
 
     public ComparisonViewModel(Workspace.WorkspaceViewModel workspace, ReadingViewModel reading)
-        : base("04", "Сравнение", "Матрица энкодера и модули QR, выделенные детектором")
+        : base("04", "Сравнение")
     {
         Workspace = workspace;
         Reading = reading;
