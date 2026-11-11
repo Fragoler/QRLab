@@ -87,9 +87,19 @@
               </StackPanel>
               <TextBlock Text="Источник содержимого" Classes="label"/>
               <ComboBox ItemsSource="{Binding Settings.Sources}" SelectedValue="{Binding Settings.Source, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
-              <TextBlock Text="Содержимое / шаблон" Classes="label"/>
-              <TextBox Text="{Binding Settings.Template, Mode=TwoWay}" AcceptsReturn="True" Height="62" TextWrapping="Wrap"/>
-              <TextBlock Text="{}{num} — порядковый номер образца" Classes="muted" FontSize="10"/>
+              <StackPanel IsVisible="{Binding Settings.IsText}" Spacing="5">
+                <TextBlock Text="Содержимое / шаблон" Classes="label"/>
+                <TextBox Text="{Binding Settings.Template, Mode=TwoWay}" AcceptsReturn="True" Height="62" TextWrapping="Wrap"/>
+                <TextBlock Text="{}{num} — порядковый номер образца" Classes="muted" FontSize="10"/>
+              </StackPanel>
+              <StackPanel IsVisible="{Binding Settings.IsRandom}" Spacing="5">
+                <TextBlock Text="Длина случайной строки" Classes="label"/>
+                <NumericUpDown Value="{Binding Settings.RandomLength, Mode=TwoWay}" Minimum="{Binding Settings.Limits.ContentLength.Minimum}" Maximum="{Binding Settings.Limits.ContentLength.Maximum}" FormatString="0"/>
+                <TextBlock Text="Новая строка для каждого образца: a–z, 0–9. Для EAN-13 — 12 или 13 цифр с контрольной суммой." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
+              </StackPanel>
+              <TextBlock Text="Текущее количество символов / Ёмкость кода в символах" Classes="label" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding Settings.ContentUsage}"/>
+              <TextBlock Text="Ёмкость оценена для алфавита текста, без учёта размера изображения. QR «авто» — версия 40. Для пакета — самая длинная строка. EAN-13 включает контрольную цифру." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
 
               <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding Settings.IsBatch}">
                 <StackPanel>

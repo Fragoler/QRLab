@@ -97,7 +97,7 @@ public sealed class ZxingCodeRecognizer : ICodeRecognizer
                 return result is null
                     ? (null, bitmaps.Final is null
                         ? "Код не найден."
-                        : "Матрица модулей выделена, но содержимое QR не удалось декодировать.")
+                        : "Матрица модулей выделена, но содержимое кода не удалось декодировать.")
                     : (result.Text, null);
             
             if (metadata.TryGetValue(ResultMetadataType.ERRORS_CORRECTED, out var corrected) && corrected is int count)
@@ -108,7 +108,7 @@ public sealed class ZxingCodeRecognizer : ICodeRecognizer
             return result is null 
                 ? (null, bitmaps.Final is null 
                     ? "Код не найден."
-                    : "Матрица модулей выделена, но содержимое QR не удалось декодировать.") 
+                    : "Матрица модулей выделена, но содержимое кода не удалось декодировать.") 
                 : (result.Text, null);
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)

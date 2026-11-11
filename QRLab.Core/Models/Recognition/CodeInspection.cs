@@ -4,7 +4,11 @@ namespace QRLab.Core.Models.Recognition;
 
 public enum ModuleRole { Data, Finder, Separator, Alignment, Timing, Format, Version, Fixed, Remainder, Guard, RowIndicator, Checksum, QuietZone }
 
-public readonly record struct ModuleCell(ModuleRole Role, int Codeword = -1, int Bit = -1);
+public readonly record struct ModuleCell(ModuleRole Role, int Codeword = -1, int Bit = -1)
+{
+    // Zero-based correction block; service modules and linear barcodes have none.
+    public int Block { get; init; } = -1;
+}
 
 public sealed class CodeLayout(int width, int height, IReadOnlyList<ModuleCell> cells)
 {
@@ -19,7 +23,7 @@ public sealed record CorrectionBlock(int Number, int DamagedWords, int TotalWord
 {
     public int Capacity => CorrectionWords / 2;
     public int Erasures { get; init; }
-    public bool ExceedsCapacity => 2 * (DamagedWords - Erasures) + Erasures > CorrectionWords;
+    public bool ExceedsCapacity => DamagedWords > Capacity;
 }
 
 public sealed record CodeInspection(

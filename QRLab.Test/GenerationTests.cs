@@ -5,6 +5,8 @@ using QRLab.Core.Models.Images;
 using QRLab.Core.Models.Mutations;
 using QRLab.Image.Generation;
 using QRLab.Image.Storage;
+using QRLab.Image.Generation.Encoders;
+using QRLab.View.ViewModels.Generation;
 using QRLab.Test.Fixtures;
 using SkiaSharp;
 using Xunit;
@@ -17,6 +19,98 @@ public sealed class GenerationTests : IDisposable
 {
     private readonly CodeGenerator _generator = new();
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"QRLab.Tests-{Guid.NewGuid():N}");
+
+    [Theory]
+    [InlineData("1", 41)]
+    [InlineData("A", 25)]
+    [InlineData("a", 16)]
+    [InlineData("я", 8)]
+    [InlineData("😀", 4)]
+    public void CapacityMatchesActualQrEncoderBoundary(string character, int expected)
+    {
+        var options = new QrGenerationOptions { Version = 1, Correction = QrCorrectionLevel.Low };
+        var capacity = new CodeCapacityCalculator().Calculate(options, character);
+        Assert.Equal(expected, capacity);
+        var encoder = new QrCodeEncoder();
+        encoder.Encode(string.Concat(Enumerable.Repeat(character, capacity)), options);
+        Assert.Throws<WriterException>(() => encoder.Encode(string.Concat(Enumerable.Repeat(character, capacity + 1)), options));
+    }
+
+    [Fact]
+    public void CapacityAndUsageFollowSettingsAndExpandedBatchNumbers()
+    {
+        var settings = new GenerationSettingsViewModel
+        {
+            Source = ContentSource.NumberedTemplate, Template = "a{num}", FirstNumber = 9999, Count = 2
+        };
+        settings.Qr.Version = 1;
+        settings.Qr.Correction = QrCorrectionLevel.Low;
+        Assert.Equal("6 / 16", settings.ContentUsage);
+        settings.Mode = GenerationMode.Single;
+        Assert.Equal("5 / 16", settings.ContentUsage);
+        settings.Source = ContentSource.Text;
+        settings.Template = "😀";
+        Assert.Equal("1 / 4", settings.ContentUsage);
+        settings.Qr.Correction = QrCorrectionLevel.High;
+        Assert.Equal("1 / 1", settings.ContentUsage);
+        settings.Template = "";
+        Assert.StartsWith("0 / ", settings.ContentUsage);
+    }
+
+    [Fact]
+    public void RandomBatchUsesRequestedLengthAndSurvivesStorage()
+    {
+        var settings = new QrGenerationOptions
+        {
+            Source = ContentSource.RandomString, Template = "", RandomLength = 23, Count = 3
+        };
+        var samples = _generator.CreateSamples(settings);
+        Assert.All(samples, sample =>
+        {
+            Assert.Equal(23, sample.Content.Length);
+            Assert.All(sample.Content, c => Assert.True(c is >= 'a' and <= 'z' or >= '0' and <= '9'));
+        });
+        Assert.Equal(3, samples.Select(s => s.Content).Distinct().Count());
+        var folder = Path.Combine(_root, "random");
+        var storage = TestApplicationFactory.CreateStorage();
+        storage.Save(samples, new(folder));
+        var loaded = storage.Load(folder);
+        Assert.Equal(samples.Select(s => s.Content), loaded.Samples.Select(s => s.Content));
+        var vm = new GenerationSettingsViewModel();
+        vm.ApplyOptions(loaded.Samples[0].Settings, loaded.Samples.Count);
+        Assert.True(vm.IsRandom);
+        Assert.Equal(23, vm.RandomLength);
+        vm.ApplyOptions(settings, 1);
+        Assert.True(vm.IsRandom);
+        Assert.Equal(GenerationMode.Batch, vm.Mode);
+        vm.Mode = GenerationMode.Single;
+        Assert.DoesNotContain(vm.Sources, option => option.Id == ContentSource.RandomString);
+        Assert.False(vm.IsRandom);
+        Assert.NotEqual(ContentSource.RandomString, vm.ToOptions().Source);
+    }
+
+    [Theory]
+    [InlineData(12)]
+    [InlineData(13)]
+    public void RandomEanIncludesValidCheckDigit(int length)
+    {
+        var samples = _generator.CreateSamples(new Ean13GenerationOptions
+        {
+            Source = ContentSource.RandomString, RandomLength = length, Count = 2
+        });
+        Assert.All(samples, sample =>
+        {
+            Assert.Equal(13, sample.Content.Length);
+            Assert.Equal(sample.Content, new Ean13GenerationOptions { Source = ContentSource.Text, Template = sample.Content }.PrepareContent(1));
+        });
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(10001)]
+    public void RandomSourceRejectsInvalidLength(int length) => Assert.Throws<ArgumentException>(() =>
+        _generator.CreateSamples(new QrGenerationOptions { Source = ContentSource.RandomString, RandomLength = length }));
 
     [Theory]
     [InlineData(CodeKind.QrCode, BarcodeType.Code128, "Привет, QRLab!", BarcodeFormat.QR_CODE)]

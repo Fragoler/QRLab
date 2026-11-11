@@ -2,6 +2,7 @@ namespace QRLab.Core.Models.Generation;
 
 public static class GenerationLimits
 {
+    public const int MaximumContentLength = 10000;
     public const int MinimumCount = 1;
     public const int MaximumCount = 1000;
     public const int MaximumFirstNumber = 999999;

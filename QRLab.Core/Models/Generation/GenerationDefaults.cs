@@ -5,6 +5,7 @@ namespace QRLab.Core.Models.Generation;
 
 public static class GenerationDefaults
 {
+    public const int RandomLength = 16;
     public const string Template = "LAB-2026-{num}";
     public const string NumberPlaceholder = "{num}";
     public const string NumberFormat = "0000";

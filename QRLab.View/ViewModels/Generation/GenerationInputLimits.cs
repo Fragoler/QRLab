@@ -5,6 +5,7 @@ namespace QRLab.View.ViewModels.Generation;
 
 public sealed class GenerationInputLimits
 {
+    public NumericRange ContentLength { get; } = new(1, GenerationLimits.MaximumContentLength);
     public NumericRange Count { get; } = new(GenerationLimits.MinimumCount, GenerationLimits.MaximumCount);
     public NumericRange FirstNumber { get; } = new(GenerationDefaults.FirstNumber, GenerationLimits.MaximumFirstNumber);
     public NumericRange ImageSize { get; } = new(GenerationLimits.MinimumImageSize, GenerationLimits.MaximumImageSize);

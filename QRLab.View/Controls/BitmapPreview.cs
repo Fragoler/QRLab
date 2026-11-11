@@ -21,6 +21,8 @@ public sealed class BitmapPreview : Control
     public static readonly StyledProperty<CodeLayout?> LayoutProperty = AvaloniaProperty.Register<BitmapPreview, CodeLayout?>(nameof(Layout));
     public static readonly StyledProperty<bool> HighlightZonesProperty = AvaloniaProperty.Register<BitmapPreview, bool>(nameof(HighlightZones));
     public static readonly StyledProperty<bool> HighlightCodewordsProperty = AvaloniaProperty.Register<BitmapPreview, bool>(nameof(HighlightCodewords));
+    public static readonly StyledProperty<bool> HighlightBlocksProperty = AvaloniaProperty.Register<BitmapPreview, bool>(nameof(HighlightBlocks));
+    public static readonly StyledProperty<bool> ShowModulesProperty = AvaloniaProperty.Register<BitmapPreview, bool>(nameof(ShowModules), true);
     public static readonly StyledProperty<double> ZoomProperty = AvaloniaProperty.Register<BitmapPreview, double>(nameof(Zoom), 1);
     public static readonly StyledProperty<Vector> PanOffsetProperty = AvaloniaProperty.Register<BitmapPreview, Vector>(nameof(PanOffset));
     public BinaryImage? Image { get => GetValue(ImageProperty); set => SetValue(ImageProperty, value); }
@@ -29,12 +31,14 @@ public sealed class BitmapPreview : Control
     public CodeLayout? Layout { get => GetValue(LayoutProperty); set => SetValue(LayoutProperty, value); }
     public bool HighlightZones { get => GetValue(HighlightZonesProperty); set => SetValue(HighlightZonesProperty, value); }
     public bool HighlightCodewords { get => GetValue(HighlightCodewordsProperty); set => SetValue(HighlightCodewordsProperty, value); }
+    public bool HighlightBlocks { get => GetValue(HighlightBlocksProperty); set => SetValue(HighlightBlocksProperty, value); }
+    public bool ShowModules { get => GetValue(ShowModulesProperty); set => SetValue(ShowModulesProperty, value); }
     public double Zoom { get => GetValue(ZoomProperty); set => SetValue(ZoomProperty, value); }
     public Vector PanOffset { get => GetValue(PanOffsetProperty); set => SetValue(PanOffsetProperty, value); }
     private WriteableBitmap? _bitmap;
     private Point? _drag;
     static BitmapPreview() => AffectsRender<BitmapPreview>(ImageProperty, ReferenceProperty, HighlightChangesProperty, ZoomProperty, PanOffsetProperty,
-        LayoutProperty, HighlightZonesProperty, HighlightCodewordsProperty);
+        LayoutProperty, HighlightZonesProperty, HighlightCodewordsProperty, HighlightBlocksProperty, ShowModulesProperty);
     public BitmapPreview()
     {
         ClipToBounds = true;
@@ -46,7 +50,8 @@ public sealed class BitmapPreview : Control
     {
         base.OnPropertyChanged(change);
         if (change.Property == ImageProperty || change.Property == ReferenceProperty || change.Property == HighlightChangesProperty
-            || change.Property == LayoutProperty || change.Property == HighlightZonesProperty || change.Property == HighlightCodewordsProperty)
+            || change.Property == LayoutProperty || change.Property == HighlightZonesProperty || change.Property == HighlightCodewordsProperty
+            || change.Property == HighlightBlocksProperty || change.Property == ShowModulesProperty)
         {
             _bitmap?.Dispose(); _bitmap = null;
         }
@@ -80,18 +85,23 @@ public sealed class BitmapPreview : Control
                 for (var x = 0; x < image.Width; x++)
                 {
                     var black = image[x, y];
-                    var value = black ? (byte)0 : (byte)255;
+                    var showBlack = ShowModules && black;
+                    var value = showBlack ? (byte)0 : (byte)255;
                     var i = x * 4;
                     row[i] = row[i + 1] = row[i + 2] = value; row[i + 3] = 255;
                     if (Layout is { } layout && layout.Width == image.Width && layout.Height == image.Height)
                     {
                         var cell = layout[x, y];
                         Color? tint = HighlightZones && cell.Role is not (ModuleRole.Data or ModuleRole.Remainder)
-                            ? ZoneColor(cell.Role) : HighlightCodewords && cell.Codeword >= 0
+                            ? ZoneColor(cell.Role) : HighlightBlocks && cell.Block >= 0
+                                ? BlockPalette.ColorFor(cell.Block, showBlack)
+                                : HighlightCodewords && cell.Codeword >= 0
                                 ? (cell.Codeword % 2 == 0 ? Color.FromRgb(40, 140, 165) : Color.FromRgb(110, 205, 225)) : null;
                         if (tint is { } color)
                         {
-                            byte Shade(byte component) => black ? (byte)(component * .5) : (byte)(component * .4 + 255 * .6);
+                            var blockColor = HighlightBlocks && cell.Block >= 0;
+                            byte Shade(byte component) => blockColor ? component
+                                : showBlack ? (byte)(component * .5) : (byte)(component * .4 + 255 * .6);
                             row[i] = Shade(color.B); row[i + 1] = Shade(color.G); row[i + 2] = Shade(color.R);
                         }
                     }

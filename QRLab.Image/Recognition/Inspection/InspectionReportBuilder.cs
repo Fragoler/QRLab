@@ -31,16 +31,13 @@ internal sealed class InspectionReportBuilder : IInspectionReportBuilder
         }
         Add(InspectionCategory.Codewords, "Повреждено / всего", $"{inspection.DamagedCodewords:N0} / {inspection.TotalCodewords:N0}");
         Add(InspectionCategory.Correction, "Предел коррекции ошибок", $"{inspection.CorrectionCapacity:N0}");
-        Add(InspectionCategory.Correction, "Стирания", $"{inspection.Blocks.Sum(block => block.Erasures):N0}");
         var exceeded = inspection.Blocks.Count > 0 ? inspection.Blocks.Any(block => block.ExceedsCapacity) : inspection.DamagedCodewords > 0;
         Add(InspectionCategory.Correction, "Лимит превышен", exceeded ? "Да" : "Нет");
         if (decoded?.ResultMetadata?.TryGetValue(ResultMetadataType.ERRORS_CORRECTED, out var corrected) == true && corrected is int count)
             Add(InspectionCategory.Correction, "Исправлено кодовых слов", $"{count:N0}");
         foreach (var block in inspection.Blocks)
         {
-            Add(InspectionCategory.Blocks, $"Блок {block.Number} · повреждено / всего", $"{block.DamagedWords:N0} / {block.TotalWords:N0}");
-            Add(InspectionCategory.Blocks, $"Блок {block.Number} · ошибки / лимит", $"{block.DamagedWords - block.Erasures:N0} / {block.Capacity:N0}");
-            Add(InspectionCategory.Blocks, $"Блок {block.Number} · стирания", $"{block.Erasures:N0}");
+            Add(InspectionCategory.Blocks, $"Блок {block.Number} · повреждено / лимит / всего", $"{block.DamagedWords:N0} / {block.Capacity:N0} / {block.TotalWords:N0}");
         }
         foreach (var region in inspection.Regions)
             Add(InspectionCategory.Zones, region.Name == "Кодовые слова" ? "Модули данных" : region.Name, $"{region.Changed:N0} / {region.Total:N0}");

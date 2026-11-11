@@ -91,6 +91,43 @@ public sealed class CodeInspectionTests
     }
 
     [Theory]
+    [InlineData(3, QrCorrectionLevel.Quartile)]
+    [InlineData(5, QrCorrectionLevel.High)]
+    [InlineData(7, QrCorrectionLevel.Low)]
+    public async Task QrBlockLayoutIncludesInterleavedDataAndParity(int version, QrCorrectionLevel level)
+    {
+        var sample = Create(new QrGenerationOptions { Version = version, Correction = level });
+        var report = (await Read(sample)).Inspection!;
+        var layout = sample.Layout!;
+        Assert.All(layout.Cells.Where(cell => cell.Codeword < 0), cell => Assert.Equal(-1, cell.Block));
+        var words = layout.Cells.Where(cell => cell.Codeword >= 0).GroupBy(cell => cell.Codeword)
+            .OrderBy(group => group.Key).ToArray();
+        Assert.All(words, word => Assert.Single(word.Select(cell => cell.Block).Distinct()));
+        Assert.All(report.Blocks, block => Assert.Equal(block.TotalWords,
+            words.Count(word => word.First().Block == block.Number - 1)));
+        // The first word of each block is adjacent in the interleaved stream.
+        Assert.Equal(Enumerable.Range(0, report.Blocks.Count), words.Take(report.Blocks.Count).Select(word => word.First().Block));
+        Assert.Equal(layout.Cells.Select(cell => cell.Block), report.Layout.Cells.Select(cell => cell.Block));
+    }
+
+    [Fact]
+    public async Task Pdf417CountsAllDamagedWordsAgainstErrorCapacity()
+    {
+        var sample = Create(new Pdf417GenerationOptions());
+        Assert.All(sample.Layout!.Cells.Where(cell => cell.Codeword >= 0), cell => Assert.Equal(0, cell.Block));
+        var result = await Read(Change(sample, cell => cell.Codeword is >= 0 and < 5 && cell.Bit == 8));
+        var report = result.Inspection!;
+        var block = Assert.Single(report.Blocks);
+        Assert.Equal(5, block.DamagedWords);
+        Assert.Equal(4, block.Capacity);
+        Assert.True(block.ExceedsCapacity);
+        Assert.Contains(report.Parameters, parameter => parameter.Name == "Блок 1 · повреждено / лимит / всего"
+            && parameter.Value == $"5 / 4 / {block.TotalWords:N0}");
+        Assert.DoesNotContain(report.Parameters, parameter => parameter.Name.Contains("стирани", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain("стирани", report.Conclusion, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
     [InlineData(BarcodeType.Ean13)]
     [InlineData(BarcodeType.Code128)]
     public async Task LinearCodesReportChecksumFailureAndNoCorrectionCapability(BarcodeType type)

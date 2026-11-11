@@ -10,13 +10,20 @@ namespace QRLab.Image.Recognition.Inspection;
 internal sealed class QrCodeInspector(IQrStructureProvider structures) : CodeInspector
 {
     public override bool Supports(GenerationOptions settings) => settings.Kind == CodeKind.QrCode;
-    public override CodeLayout CreateLayout(BinaryImage original, GenerationOptions settings) => structures.Get(original.Width).Layout;
+    public override CodeLayout CreateLayout(BinaryImage original, GenerationOptions settings)
+    {
+        var structure = structures.Get(original.Width);
+        var format = QrStructure.ReadFormat(original)!.Value;
+        var map = structure.Interleaving(format.Level, out _, out _);
+        return new CodeLayout(original.Width, original.Height, structure.Layout.Cells.Select(cell =>
+            cell.Codeword >= 0 ? cell with { Block = map[cell.Codeword].Block } : cell).ToArray());
+    }
 
     public override CodeInspection Inspect(SamplePreview sample, BitMatrix raster, Result? decoded, BinaryImage? detected)
     {
         var original = sample.OriginalBitmap!;
         var structure = structures.Get(original.Width);
-        var layout = structure.Layout;
+        var layout = CreateLayout(original, sample.Settings);
         var probe = Probe(sample, raster);
         var compatible = detected?.Width == original.Width && detected.Height == original.Height;
         var observed = compatible ? detected! : probe;

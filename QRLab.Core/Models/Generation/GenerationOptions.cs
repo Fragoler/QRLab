@@ -1,3 +1,4 @@
+using QRLab.Core.Models.Generation.Content;
 using System.Globalization;
 using System.Text.Json.Serialization;
 using QRLab.Core.Models.Generation.Qrcode;
@@ -22,10 +23,13 @@ public abstract record GenerationOptions
     public int Height { get; init; } = GenerationDefaults.Height;
     public int QuietZone { get; init; } = GenerationDefaults.QuietZone;
     public ContentSource Source { get; init; } = GenerationDefaults.Source;
+    public int RandomLength { get; init; } = GenerationDefaults.RandomLength;
 
     public virtual void Validate()
     {
-        if (string.IsNullOrWhiteSpace(Template)) throw new ArgumentException("Введите содержимое или шаблон кода.");
+        if (Source != ContentSource.RandomString && string.IsNullOrWhiteSpace(Template)) throw new ArgumentException("Введите содержимое или шаблон кода.");
+        if (Source == ContentSource.RandomString && RandomLength is < 1 or > GenerationLimits.MaximumContentLength)
+            throw new ArgumentException($"Длина случайной строки должна быть от 1 до {GenerationLimits.MaximumContentLength} символов.");
         
         if (Count < GenerationLimits.MinimumCount || Count > GenerationLimits.MaximumCount
             || FirstNumber < GenerationDefaults.FirstNumber || (long)FirstNumber + Count - 1 > int.MaxValue)
@@ -41,9 +45,7 @@ public abstract record GenerationOptions
         if (!Enum.IsDefined(Source)) throw new ArgumentException("Неизвестный источник содержимого.");
     }
 
-    public virtual string PrepareContent(int number) => Source == ContentSource.NumberedTemplate
-        ? Template.Replace(GenerationDefaults.NumberPlaceholder, number.ToString(GenerationDefaults.NumberFormat, CultureInfo.InvariantCulture))
-        : Template;
+    public virtual string PrepareContent(int number) => ContentProvider.For(Source).Create(this, number);
 
     public string GetSampleName(int number) => $"{SamplePrefix}-{number.ToString(GenerationDefaults.NumberFormat, CultureInfo.InvariantCulture)}";
 }

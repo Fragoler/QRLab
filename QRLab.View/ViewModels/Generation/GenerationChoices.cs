@@ -37,8 +37,12 @@ public static class GenerationChoices
     public static IReadOnlyList<EnumOption<ContentSource>> Sources { get; } = Array.AsReadOnly<EnumOption<ContentSource>>(
     [
         new(ContentSource.NumberedTemplate, "Строка-шаблон с номером"),
-        new(ContentSource.Text, "Произвольный текст")
+        new(ContentSource.Text, "Произвольный текст"),
+        new(ContentSource.RandomString, "Случайная строка произвольной длины")
     ]);
+
+    public static IReadOnlyList<EnumOption<ContentSource>> SingleSources { get; } =
+        Array.AsReadOnly(Sources.Where(option => option.Id != ContentSource.RandomString).ToArray());
 
     public static string Name<T>(IReadOnlyList<EnumOption<T>> options, T value) where T : struct, Enum =>
         options.Single(option => EqualityComparer<T>.Default.Equals(option.Id, value)).Name;

@@ -25,7 +25,7 @@ internal sealed class Pdf417Inspector : CodeInspector
                     var offset = x - bounds.Left;
                     cells[y * original.Width + x] = offset < 17 || offset >= 51 + columns * 17 ? new(ModuleRole.Guard)
                         : offset < 34 || offset >= 34 + columns * 17 ? new(ModuleRole.RowIndicator)
-                        : new(ModuleRole.Data, row * columns + (offset - 34) / 17, (offset - 34) % 17);
+                        : new(ModuleRole.Data, row * columns + (offset - 34) / 17, (offset - 34) % 17) { Block = 0 };
                 }
         return new(original.Width, original.Height, cells);
     }
@@ -45,26 +45,17 @@ internal sealed class Pdf417Inspector : CodeInspector
         var level = levelValue >= 0 ? levelValue % 30 / 3 : 2;
         var parity = 1 << (level + 1);
         var damaged = DamagedWords(original, compared, layout);
-        var words = new int[rows.Count * columns];
-        var erasures = new List<int>();
-        for (var row = 0; row < rows.Count; row++)
-            for (var column = 0; column < columns; column++)
-            {
-                var index = row * columns + column;
-                words[index] = Pdf417Symbols.Decode(ReadPattern(compared, bounds.Left + 34 + column * 17, (rows[row].Top + rows[row].Bottom) / 2));
-                if (words[index] < 0) { erasures.Add(index); words[index] = 0; }
-            }
-        var knownErasures = erasures.Count(damaged.Contains);
-        var block = new CorrectionBlock(1, damaged.Count, words.Length, parity) { Erasures = knownErasures };
-        var conclusion = $"PDF417, EC {level}: повреждено {damaged.Count} из {words.Length} слов, из них {knownErasures} не распознаны как допустимые 17-модульные символы. "
-            + $"Допуск: {parity / 2} ошибок неизвестного положения либо {parity} стираний; условие 2e + s ≤ {parity}.";
+        var totalWords = rows.Count * columns;
+        var block = new CorrectionBlock(1, damaged.Count, totalWords, parity);
+        var conclusion = $"PDF417, EC {level}: повреждено {damaged.Count} из {totalWords} слов. "
+            + $"Предел коррекции ошибок: {block.Capacity} кодовых слов.";
         if (block.ExceedsCapacity) conclusion += " Расчётная граница коррекции превышена.";
         if (observed is null) conclusion += " " + ReferenceWarning;
         else if (decoded is null) conclusion += " Границы найдены; отказ возможен при чтении индикаторов строк, кодовых слов или коррекции. Эти этапы стандартный API не различает.";
         return new("PDF417", layout, observed, probe, null,
             observed is null ? ReferenceWarning : "Границы найдены PDF417-детектором; для учебной выборки используются число строк и ширина известного образца.",
             "",
-            conclusion, Damage(original, compared, layout), [block], damaged.Count, words.Length, parity / 2)
+            conclusion, Damage(original, compared, layout), [block], damaged.Count, totalWords, parity / 2)
         {
             Basis = observed is null ? InspectionBasis.ReferenceGrid : InspectionBasis.DetectorBounds,
             Parameters = [new(InspectionCategory.Symbol, "Строки / столбцы", $"{rows.Count} / {columns}"),
