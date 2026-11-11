@@ -7,7 +7,7 @@ using ZXing.Common;
 
 namespace QRLab.Image.Recognition.Inspection;
 
-internal abstract class CodeInspector
+internal abstract class CodeInspector : ICodeInspector
 {
     public abstract bool Supports(GenerationOptions settings);
     public abstract CodeLayout CreateLayout(BinaryImage original, GenerationOptions settings);
@@ -72,6 +72,13 @@ internal abstract class CodeInspector
 
 internal static class CodeInspectors
 {
-    private static readonly CodeInspector[] Inspectors = [new QrCodeInspector(), new Ean13Inspector(), new Code128Inspector(), new Pdf417Inspector()];
+    private static readonly IInspectionReportBuilder Reports = new InspectionReportBuilder();
+    private static readonly CodeInspector[] Inspectors =
+    [
+        new CategorizedCodeInspector(new QrCodeInspector(new QrStructureProvider()), Reports),
+        new CategorizedCodeInspector(new Ean13Inspector(), Reports),
+        new CategorizedCodeInspector(new Code128Inspector(), Reports),
+        new CategorizedCodeInspector(new Pdf417Inspector(), Reports)
+    ];
     public static CodeInspector For(GenerationOptions settings) => Inspectors.Single(inspector => inspector.Supports(settings));
 }

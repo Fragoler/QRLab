@@ -7,15 +7,15 @@ using ZXing.Common;
 
 namespace QRLab.Image.Recognition.Inspection;
 
-internal sealed class QrCodeInspector : CodeInspector
+internal sealed class QrCodeInspector(IQrStructureProvider structures) : CodeInspector
 {
     public override bool Supports(GenerationOptions settings) => settings.Kind == CodeKind.QrCode;
-    public override CodeLayout CreateLayout(BinaryImage original, GenerationOptions settings) => new QrStructure(original.Width).Layout;
+    public override CodeLayout CreateLayout(BinaryImage original, GenerationOptions settings) => structures.Get(original.Width).Layout;
 
     public override CodeInspection Inspect(SamplePreview sample, BitMatrix raster, Result? decoded, BinaryImage? detected)
     {
         var original = sample.OriginalBitmap!;
-        var structure = new QrStructure(original.Width);
+        var structure = structures.Get(original.Width);
         var layout = structure.Layout;
         var probe = Probe(sample, raster);
         var compatible = detected?.Width == original.Width && detected.Height == original.Height;
@@ -39,6 +39,11 @@ internal sealed class QrCodeInspector : CodeInspector
         return new("QR", layout, compatible ? detected : null, probe, null,
             compatible ? "Сетка модулей, выделенная QR-детектором" : ReferenceWarning,
             "",
-            conclusion, regions, blocks, damaged.Count, structure.Version.TotalCodewords, blocks.Sum(block => block.Capacity));
+            conclusion, regions, blocks, damaged.Count, structure.Version.TotalCodewords, blocks.Sum(block => block.Capacity))
+        {
+            Basis = compatible ? InspectionBasis.DetectedModules : InspectionBasis.ReferenceGrid,
+            Parameters = [new(InspectionCategory.Symbol, "Версия QR", structure.Version.VersionNumber.ToString()),
+                new(InspectionCategory.Correction, "Уровень коррекции", format.Level.ToString())]
+        };
     }
 }
