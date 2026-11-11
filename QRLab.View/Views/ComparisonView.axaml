@@ -15,21 +15,21 @@
         <Button Content="Следующий →" Command="{Binding Workspace.NextCommand}"/>
       </StackPanel>
     </Grid>
-    <Grid Grid.Row="1" ColumnDefinitions="*,280" ColumnSpacing="12">
+    <Grid Grid.Row="1" ColumnDefinitions="*,340" ColumnSpacing="12">
       <Grid RowDefinitions="*,Auto,Auto" RowSpacing="12">
         <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
           <Border Classes="card">
             <Grid RowDefinitions="Auto,*,Auto">
               <Border Classes="panelHead"><TextBlock Text="А · Матрица энкодера" Classes="heading"/></Border>
-              <c:BitmapPreview Grid.Row="1" Name="OriginalBitmapPreview" Image="{Binding OriginalBitmap}" Zoom="{Binding Zoom, Mode=TwoWay}" PanOffset="{Binding PanOffset, Mode=TwoWay}" Margin="16" MinHeight="180"/>
+              <c:BitmapPreview Grid.Row="1" Name="OriginalBitmapPreview" Image="{Binding OriginalBitmap}" Layout="{Binding Layout}" HighlightZones="{Binding HighlightZones}" HighlightCodewords="{Binding HighlightCodewords}" Zoom="{Binding Zoom, Mode=TwoWay}" PanOffset="{Binding PanOffset, Mode=TwoWay}" Margin="16" MinHeight="180"/>
               <TextBlock Grid.Row="1" Name="OriginalMatrixPlaceholder" IsVisible="{Binding !HasOriginalBitmap}" Text="Нет матрицы энкодера" Classes="muted" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="16"/>
               <Border Grid.Row="2" Padding="12"><TextBlock Text="{Binding OriginalDimensions}" Classes="muted"/></Border>
             </Grid>
           </Border>
           <Border Grid.Column="1" Classes="card">
             <Grid RowDefinitions="Auto,*,Auto">
-              <Border Classes="panelHead"><TextBlock Text="Б · Матрица детектора" Classes="heading"/></Border>
-              <c:BitmapPreview Grid.Row="1" Name="FinalBitmapPreview" Image="{Binding FinalBitmap}" Reference="{Binding OriginalBitmap}" HighlightChanges="{Binding HighlightChanges}" Zoom="{Binding Zoom, Mode=TwoWay}" PanOffset="{Binding PanOffset, Mode=TwoWay}" Margin="16" MinHeight="180"/>
+              <Border Classes="panelHead"><TextBlock Text="Б · Матрица считывания" Classes="heading"/></Border>
+              <c:BitmapPreview Grid.Row="1" Name="FinalBitmapPreview" Image="{Binding FinalBitmap}" Reference="{Binding OriginalBitmap}" Layout="{Binding Layout}" HighlightZones="{Binding HighlightZones}" HighlightCodewords="{Binding HighlightCodewords}" HighlightChanges="{Binding HighlightChanges}" Zoom="{Binding Zoom, Mode=TwoWay}" PanOffset="{Binding PanOffset, Mode=TwoWay}" Margin="16" MinHeight="180"/>
               <TextBlock Grid.Row="1" Name="FinalMatrixPlaceholder" IsVisible="{Binding !HasFinalBitmap}" Text="{Binding FinalPlaceholder}" Classes="muted" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="16"/>
               <Border Grid.Row="2" Padding="12"><TextBlock Text="{Binding FinalDimensions}" Classes="muted"/></Border>
             </Grid>
@@ -43,11 +43,12 @@
           </Grid>
         </Border>
         <Border Grid.Row="2" Classes="card">
-          <StackPanel>
-            <Border Classes="panelHead"><TextBlock Text="Изменённые модули и данные распознавания" Classes="heading"/></Border>
-            <StackPanel Margin="14" Spacing="9">
+          <Grid RowDefinitions="Auto,*">
+            <Border Classes="panelHead"><TextBlock Text="Данные распознавания" Classes="heading"/></Border>
+            <Grid Grid.Row="1" Margin="14" ColumnDefinitions="*,1,*" ColumnSpacing="16">
+            <StackPanel Spacing="9">
               <TextBlock Text="{Binding Summary}" Classes="accent"/>
-              <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="20" RowSpacing="6" IsVisible="{Binding CanCompare}">
+              <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="6" IsVisible="{Binding CanCompare}">
                 <TextBlock Text="{Binding Comparison.AddedBlack, StringFormat='Белый → чёрный: {0:N0}'}" Foreground="#37C3E1"/>
                 <TextBlock Grid.Column="1" Text="{Binding Comparison.RemovedBlack, StringFormat='Чёрный → белый: {0:N0}'}" Foreground="#F57373"/>
                 <TextBlock Grid.Row="1" Text="{Binding Comparison.OriginalBlack, StringFormat='Чёрных в исходнике: {0:N0}'}"/>
@@ -69,7 +70,25 @@
               <TextBlock Text="{Binding Workspace.SelectedSample.Status}" TextWrapping="Wrap"/>
               <TextBlock Text="{Binding Workspace.SelectedSample.CorrectionStatistics}" Classes="muted" TextWrapping="Wrap"/>
             </StackPanel>
-          </StackPanel>
+            <Border Grid.Column="1" Background="#303839"/>
+            <ScrollViewer Grid.Column="2" MaxHeight="250" Padding="0,0,12,0" HorizontalScrollBarVisibility="Disabled">
+              <StackPanel Spacing="10">
+                <TextBlock Text="Диагностика повреждений" Classes="heading"/>
+                <TextBlock Text="Нет данных" IsVisible="{Binding !HasInspection}" Classes="muted"/>
+                <ItemsControl Name="DamageDiagnostics" ItemsSource="{Binding DiagnosticValues}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DiagnosticValue">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,3">
+                        <TextBlock Text="{Binding Name}" Classes="muted" TextWrapping="Wrap"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Value}" Classes="mono"/>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </ScrollViewer>
+            </Grid>
+          </Grid>
         </Border>
       </Grid>
       <ScrollViewer Grid.Column="1">
@@ -87,7 +106,29 @@
           </Border>
           <Border Classes="card" Padding="14">
             <StackPanel Spacing="10">
-              <CheckBox Content="Подсветить изменения" IsChecked="{Binding HighlightChanges}" IsEnabled="{Binding CanCompare}"/>
+              <CheckBox Content="Изменения" IsChecked="{Binding HighlightChanges}" IsEnabled="{Binding CanCompare}"/>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <CheckBox Content="Зоны QR" IsChecked="{Binding HighlightZones}" IsEnabled="{Binding IsQr}"/>
+                <Button Grid.Column="1" Name="QrLegendButton" Classes="flat" Padding="5" IsEnabled="{Binding IsQr}" ToolTip.Tip="Легенда зон QR" AutomationProperties.Name="Легенда зон QR">
+                  <c:SvgIcon Source="info" Width="16" Height="16"/>
+                  <Button.Flyout>
+                    <Flyout Placement="LeftEdgeAlignedTop">
+                      <StackPanel Spacing="8" Margin="4">
+                        <TextBlock Text="Легенда зон QR" Classes="heading"/>
+                        <TextBlock Text="Поисковые узоры" Foreground="#4696E6"/>
+                        <TextBlock Text="Выравнивающие узоры" Foreground="#AE6FE0"/>
+                        <TextBlock Text="Метки времени" Foreground="#F2AA46"/>
+                        <TextBlock Text="Информация формата" Foreground="#EBCD46"/>
+                        <TextBlock Text="Информация версии (v7+)" Foreground="#E169AA"/>
+                        <TextBlock Text="Фиксированный модуль" Foreground="#DC5050"/>
+                        <TextBlock Text="Разделители" Foreground="#82909A"/>
+                        <TextBlock Text="Кодовые слова · два оттенка голубого" Foreground="#64C3D7"/>
+                      </StackPanel>
+                    </Flyout>
+                  </Button.Flyout>
+                </Button>
+              </Grid>
+              <CheckBox Content="Кодовые слова · шахматная окраска" IsChecked="{Binding HighlightCodewords}"/>
               <Button Content="Считать и распознать набор" Classes="primary" Command="{Binding Reading.RunCommand}"/>
               <Button Content="Остановить" IsVisible="{Binding Reading.IsBusy}" Command="{Binding Reading.RunCancelCommand}"/>
             </StackPanel>

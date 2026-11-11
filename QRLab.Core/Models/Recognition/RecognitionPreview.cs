@@ -8,4 +8,5 @@ public sealed record RecognitionPreview(int Number, Status Status, double Millis
     public BinaryImage? FinalBitmap { get; init; }
     public int? CorrectedCodewords { get; init; }
     public string? ErrorCorrectionLevel { get; init; }
+    public CodeInspection? Inspection { get; init; }
 }

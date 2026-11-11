@@ -6,6 +6,7 @@ using QRLab.Core.Models.Images;
 using QRLab.Core.Models.Generation;
 using ZXing;
 using ZXing.Common;
+using QRLab.Image.Recognition.Inspection;
 
 namespace QRLab.Image.Recognition;
 
@@ -43,7 +44,8 @@ public sealed class ZxingCodeRecognizer : ICodeRecognizer
                 {
                     OriginalBitmap = bitmaps.Original, FinalBitmap = bitmaps.Final,
                     CorrectedCodewords = bitmaps.CorrectedCodewords < 0 ? null : bitmaps.CorrectedCodewords,
-                    ErrorCorrectionLevel = bitmaps.ErrorCorrectionLevel
+                    ErrorCorrectionLevel = bitmaps.ErrorCorrectionLevel,
+                    Inspection = bitmaps.Inspection
                 });
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -61,6 +63,7 @@ public sealed class ZxingCodeRecognizer : ICodeRecognizer
         public volatile BinaryImage? Final;
         public int CorrectedCodewords = -1;
         public string? ErrorCorrectionLevel;
+        public CodeInspection? Inspection;
     }
 
     private static (string? Content, string? Error) Decode(SamplePreview sample, RecognitionOptions options, PreparedBitmaps bitmaps)
@@ -82,7 +85,13 @@ public sealed class ZxingCodeRecognizer : ICodeRecognizer
                 }
             };
             
-            var result = reader.Decode(BitmapReader.ReadLuminance(source));
+            var luminance = BitmapReader.ReadLuminance(source);
+            var result = reader.Decode(luminance);
+            if (sample.OriginalBitmap is not null)
+            {
+                bitmaps.Inspection = CodeInspectors.For(sample.Settings).Inspect(sample, new HybridBinarizer(luminance).BlackMatrix, result, bitmaps.Final);
+                bitmaps.Final ??= bitmaps.Inspection.Observed;
+            }
             
             if (result?.ResultMetadata is not { } metadata)
                 return result is null
