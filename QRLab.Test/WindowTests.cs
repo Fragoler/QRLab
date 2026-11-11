@@ -116,6 +116,9 @@ public sealed class WindowTests
             Assert.All(previews, preview => Assert.Equal(1.1, preview.Zoom, 6));
             vm.Comparison.ResetZoomCommand.Execute(null); Dispatcher.UIThread.RunJobs();
             Assert.All(previews, preview => { Assert.Equal(1, preview.Zoom); Assert.Equal(default, preview.PanOffset); });
+            vm.Comparison.HighlightZones = true; vm.Comparison.HighlightCodewords = true;
+            Dispatcher.UIThread.RunJobs();
+            Assert.All(previews, preview => { Assert.True(preview.HighlightZones); Assert.True(preview.HighlightCodewords); Assert.NotNull(preview.Layout); });
             if (Environment.GetEnvironmentVariable("QRLAB_CAPTURE") is { } directory)
             {
                 Directory.CreateDirectory(directory);
@@ -124,6 +127,17 @@ public sealed class WindowTests
                 using var output = File.Create(Path.Combine(directory, "comparison-populated.png"));
                 bitmap.Save(output, PngBitmapEncoderOptions.Default);
             }
+            Assert.Equal(3, window.GetVisualDescendants().OfType<CheckBox>().Count());
+            var legendButton = window.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "QrLegendButton");
+            Assert.Contains(legendButton.GetVisualDescendants().OfType<SvgIcon>(), icon => icon.Source == "info");
+            var legend = Assert.IsType<Flyout>(legendButton.Flyout);
+            legend.ShowAt(legendButton); Dispatcher.UIThread.RunJobs();
+            Assert.True(legend.IsOpen); legend.Hide();
+            var diagnostics = window.GetVisualDescendants().OfType<ItemsControl>().Single(control => control.Name == "DamageDiagnostics");
+            Assert.NotEmpty(vm.Comparison.DiagnosticValues);
+            Assert.Contains(vm.Comparison.DiagnosticValues, value => value.Name == "Предел коррекции ошибок");
+            var dataCard = diagnostics.GetVisualAncestors().OfType<Border>().First(border => border.Classes.Contains("card"));
+            Assert.Contains(dataCard.GetVisualDescendants().OfType<TextBlock>(), text => text.Text == "Данные распознавания");
             vm.Workspace.NextCommand.Execute(null); Dispatcher.UIThread.RunJobs();
             Assert.Equal(0, vm.Comparison.Comparison!.Changed);
             Assert.Same(vm.Workspace.SelectedSample!.State.FinalBitmap, final.Image);

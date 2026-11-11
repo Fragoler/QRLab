@@ -7,6 +7,7 @@ using QRLab.Core.Models.Samples;
 using QRLab.Core.Models.Storage;
 using QRLab.Image.Storage.Serialization;
 using QRLab.Image.Generation.Encoders;
+using QRLab.Image.Recognition.Inspection;
 
 namespace QRLab.Image.Storage;
 
@@ -137,10 +138,12 @@ public sealed class SampleSetStorage : ISampleSetStorage
                         throw new InvalidDataException("Некорректная длина битмапы.");
                     return new(bitmap.Width, bitmap.Height, File.ReadAllBytes(path));
                 }
+                var originalModules = document.Version == CurrentVersion ? ReadBitmap(stored.OriginalBitmap) : RecreateModules();
                 return new SamplePreview(stored.Number, stored.Name, stored.Content, original, frames, stored.Settings)
                 {
                     // Versions 3/4 did not store module matrices (v4 stored raster pixels).
-                    OriginalBitmap = document.Version == CurrentVersion ? ReadBitmap(stored.OriginalBitmap) : RecreateModules(),
+                    OriginalBitmap = originalModules,
+                    Layout = originalModules is null ? null : CodeInspectors.For(stored.Settings).CreateLayout(originalModules, stored.Settings),
                     FinalBitmap = document.Version == CurrentVersion ? ReadBitmap(stored.FinalBitmap) : null
                 };
 

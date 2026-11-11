@@ -2,6 +2,7 @@ using QRLab.Core.Interfaces.Generation;
 using QRLab.Core.Models.Generation;
 using QRLab.Core.Models.Samples;
 using QRLab.Image.Generation.Encoders;
+using QRLab.Image.Recognition.Inspection;
 using ZXing;
 
 namespace QRLab.Image.Generation;
@@ -31,10 +32,12 @@ public sealed class CodeGenerator : ICodeGenerator
                 if (matrix.Width > options.Width || matrix.Height > options.Height)
                     throw new ArgumentException($"Увеличьте размер изображения минимум до {matrix.Width} × {matrix.Height} пикселей.");
                 var image = _renderer.Render(matrix, options);
+                var modules = ModuleMatrix.FromEncoder(matrix, options);
                 result.Add(
                     new SamplePreview(number, options.GetSampleName(number), content, image, [], options)
                     {
-                        OriginalBitmap = ModuleMatrix.FromEncoder(matrix, options)
+                        OriginalBitmap = modules,
+                        Layout = CodeInspectors.For(options).CreateLayout(modules, options)
                     });
             }
             catch (Exception exception) when (exception is ArgumentException or WriterException)

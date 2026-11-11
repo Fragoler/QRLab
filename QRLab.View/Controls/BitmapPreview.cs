@@ -6,25 +6,35 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using QRLab.Core.Models.Images;
+using QRLab.Core.Models.Recognition;
 
 namespace QRLab.View.Controls;
 
-/// <summary>Displays code modules directly through a raw framebuffer, with no PNG encoding.</summary>
+/// <summary>
+/// Displays code modules directly through a raw framebuffer, with no PNG encoding.
+/// </summary>
 public sealed class BitmapPreview : Control
 {
     public static readonly StyledProperty<BinaryImage?> ImageProperty = AvaloniaProperty.Register<BitmapPreview, BinaryImage?>(nameof(Image));
     public static readonly StyledProperty<BinaryImage?> ReferenceProperty = AvaloniaProperty.Register<BitmapPreview, BinaryImage?>(nameof(Reference));
     public static readonly StyledProperty<bool> HighlightChangesProperty = AvaloniaProperty.Register<BitmapPreview, bool>(nameof(HighlightChanges));
+    public static readonly StyledProperty<CodeLayout?> LayoutProperty = AvaloniaProperty.Register<BitmapPreview, CodeLayout?>(nameof(Layout));
+    public static readonly StyledProperty<bool> HighlightZonesProperty = AvaloniaProperty.Register<BitmapPreview, bool>(nameof(HighlightZones));
+    public static readonly StyledProperty<bool> HighlightCodewordsProperty = AvaloniaProperty.Register<BitmapPreview, bool>(nameof(HighlightCodewords));
     public static readonly StyledProperty<double> ZoomProperty = AvaloniaProperty.Register<BitmapPreview, double>(nameof(Zoom), 1);
     public static readonly StyledProperty<Vector> PanOffsetProperty = AvaloniaProperty.Register<BitmapPreview, Vector>(nameof(PanOffset));
     public BinaryImage? Image { get => GetValue(ImageProperty); set => SetValue(ImageProperty, value); }
     public BinaryImage? Reference { get => GetValue(ReferenceProperty); set => SetValue(ReferenceProperty, value); }
     public bool HighlightChanges { get => GetValue(HighlightChangesProperty); set => SetValue(HighlightChangesProperty, value); }
+    public CodeLayout? Layout { get => GetValue(LayoutProperty); set => SetValue(LayoutProperty, value); }
+    public bool HighlightZones { get => GetValue(HighlightZonesProperty); set => SetValue(HighlightZonesProperty, value); }
+    public bool HighlightCodewords { get => GetValue(HighlightCodewordsProperty); set => SetValue(HighlightCodewordsProperty, value); }
     public double Zoom { get => GetValue(ZoomProperty); set => SetValue(ZoomProperty, value); }
     public Vector PanOffset { get => GetValue(PanOffsetProperty); set => SetValue(PanOffsetProperty, value); }
     private WriteableBitmap? _bitmap;
     private Point? _drag;
-    static BitmapPreview() => AffectsRender<BitmapPreview>(ImageProperty, ReferenceProperty, HighlightChangesProperty, ZoomProperty, PanOffsetProperty);
+    static BitmapPreview() => AffectsRender<BitmapPreview>(ImageProperty, ReferenceProperty, HighlightChangesProperty, ZoomProperty, PanOffsetProperty,
+        LayoutProperty, HighlightZonesProperty, HighlightCodewordsProperty);
     public BitmapPreview()
     {
         ClipToBounds = true;
@@ -35,7 +45,8 @@ public sealed class BitmapPreview : Control
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == ImageProperty || change.Property == ReferenceProperty || change.Property == HighlightChangesProperty)
+        if (change.Property == ImageProperty || change.Property == ReferenceProperty || change.Property == HighlightChangesProperty
+            || change.Property == LayoutProperty || change.Property == HighlightZonesProperty || change.Property == HighlightCodewordsProperty)
         {
             _bitmap?.Dispose(); _bitmap = null;
         }
@@ -72,7 +83,23 @@ public sealed class BitmapPreview : Control
                     var value = black ? (byte)0 : (byte)255;
                     var i = x * 4;
                     row[i] = row[i + 1] = row[i + 2] = value; row[i + 3] = 255;
-                    if (HighlightChanges && Reference is { } original && original.Width == image.Width && original.Height == image.Height && original[x, y] != black)
+                    if (Layout is { } layout && layout.Width == image.Width && layout.Height == image.Height)
+                    {
+                        var cell = layout[x, y];
+                        Color? tint = HighlightZones && cell.Role is not (ModuleRole.Data or ModuleRole.Remainder)
+                            ? ZoneColor(cell.Role) : HighlightCodewords && cell.Codeword >= 0
+                                ? (cell.Codeword % 2 == 0 ? Color.FromRgb(40, 140, 165) : Color.FromRgb(110, 205, 225)) : null;
+                        if (tint is { } color)
+                        {
+                            byte Shade(byte component) => black ? (byte)(component * .5) : (byte)(component * .4 + 255 * .6);
+                            row[i] = Shade(color.B); row[i + 1] = Shade(color.G); row[i + 2] = Shade(color.R);
+                        }
+                    }
+                    if (HighlightChanges 
+                        && Reference is { } original 
+                        && original.Width == image.Width 
+                        && original.Height == image.Height 
+                        && original[x, y] != black)
                     {
                         // Cyan: added black. Coral: removed black.
                         row[i] = black ? (byte)225 : (byte)115;
@@ -114,4 +141,13 @@ public sealed class BitmapPreview : Control
         SetCurrentValue(ZoomProperty, Math.Clamp(Zoom + e.Delta.Y * .1, .25, 8));
         e.Handled = true;
     }
+
+    private static Color ZoneColor(ModuleRole role) => role switch
+    {
+        ModuleRole.Finder => Color.Parse("#4696E6"), ModuleRole.Alignment => Color.Parse("#AE6FE0"),
+        ModuleRole.Timing => Color.Parse("#F2AA46"), ModuleRole.Format => Color.Parse("#EBCD46"),
+        ModuleRole.Version => Color.Parse("#E169AA"), ModuleRole.Fixed => Color.Parse("#DC5050"),
+        ModuleRole.Guard => Color.Parse("#4696E6"), ModuleRole.RowIndicator => Color.Parse("#AE6FE0"),
+        ModuleRole.Checksum => Color.Parse("#F2AA46"), _ => Color.Parse("#82909A")
+    };
 }
