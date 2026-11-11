@@ -74,7 +74,7 @@ public sealed partial class ComparisonViewModel : ScreenViewModel, IDisposable
         : "Декодер не смог выделить матрицу";
     public bool CanCompare => Comparison is not null;
     public BitmapComparison? Comparison { get; private set; }
-    public string Summary => Comparison is { } c ? $"Изменено {c.Changed:N0} из {c.Total:N0} модулей ({c.ChangedPercent:N2} %)"
+    public string Summary => Comparison is { } c ? $"Изменено {c.Changed:N0} из {c.Total:N0} модулей)"
         : HasBitmaps ? "Размеры матриц различаются — сравнение модулей недоступно" : "Нет данных для сравнения";
     [ObservableProperty] private bool _highlightChanges;
     [ObservableProperty] private bool _highlightZones;

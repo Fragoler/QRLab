@@ -9,6 +9,14 @@ namespace QRLab.Test;
 
 public sealed class MutationTests
 {
+    [Fact]
+    public void EditorOffersOnlyMutationsThatPreserveTheImageGrid()
+    {
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        Assert.Equal(new[] { MutationKind.GaussianBlur, MutationKind.SaltAndPepper, MutationKind.Occlusion },
+            vm.Mutations.AvailableMutations.Select(option => option.Id));
+    }
+
     [Theory]
     [InlineData(OcclusionShape.Rectangle)]
     [InlineData(OcclusionShape.Ellipse)]
@@ -103,32 +111,6 @@ public sealed class MutationTests
         var original = Image(128, canvas => canvas.Clear(SKColors.Gray));
         Assert.Same(original, new GaussianBlurMutation().Apply(original, new GaussianBlurOptions { Sigma = 0 }));
         Assert.Same(original, new SaltAndPepperMutation().Apply(original, new SaltAndPepperOptions { DensityPercent = 0 }));
-        Assert.Same(original, new PerspectiveMutation().Apply(original, new PerspectiveMutationOptions { AngleX = 0, AngleY = 0 }));
-    }
-
-    [Fact]
-    public void PerspectiveProducesATrapezoidAndKeepsCanvasAndSource()
-    {
-        var original = Image(160, canvas =>
-        {
-            canvas.Clear(SKColors.White);
-            using var paint = new SKPaint { Color = SKColors.Black };
-            canvas.DrawRect(20, 20, 120, 120, paint);
-        });
-        var source = original.Data.ToArray();
-        var mutation = new PerspectiveMutation();
-        var settings = new PerspectiveMutationOptions { AngleX = 35, AngleY = 0, Distance = 1.5, Interpolation = ImageInterpolation.Nearest };
-        var result = mutation.Apply(original, settings);
-        Assert.Equal(source, original.Data.ToArray());
-        Assert.Equal(original.Width, result.Width); Assert.Equal(original.Height, result.Height);
-        using var pixels = Decode(result);
-        var top = Enumerable.Range(0, 160).Count(x => pixels.GetPixel(x, 45).Red < 128);
-        var bottom = Enumerable.Range(0, 160).Count(x => pixels.GetPixel(x, 115).Red < 128);
-        Assert.True(top > bottom, $"Expected perspective taper, top={top}, bottom={bottom}");
-        var otherDistance = mutation.Apply(original, settings with { Distance = 5 });
-        Assert.False(result.Data.Span.SequenceEqual(otherDistance.Data.Span));
-        var tiltedY = mutation.Apply(original, settings with { AngleY = 20 });
-        Assert.False(result.Data.Span.SequenceEqual(tiltedY.Data.Span));
     }
 
     [Fact]
@@ -173,8 +155,6 @@ public sealed class MutationTests
     [Fact]
     public void NewMutationOptionsRejectInvalidParameters()
     {
-        Assert.Throws<ArgumentException>(() => new PerspectiveMutationOptions { AngleX = 61 }.Validate());
-        Assert.Throws<ArgumentException>(() => new PerspectiveMutationOptions { Distance = .5 }.Validate());
         Assert.Throws<ArgumentException>(() => new SaltAndPepperOptions { DensityPercent = -1 }.Validate());
         Assert.Throws<ArgumentException>(() => new SaltAndPepperOptions { SaltPercent = 101 }.Validate());
         Assert.Throws<ArgumentException>(() => new SaltAndPepperOptions { DensityPercent = double.NaN }.Validate());

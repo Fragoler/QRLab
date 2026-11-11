@@ -110,7 +110,6 @@ public sealed class BitmapComparisonTests
         Assert.Equal(1, comparison.AddedBlack);
         Assert.Equal(1, comparison.RemovedBlack);
         Assert.Equal(2, comparison.Unchanged);
-        Assert.Equal(50, comparison.ChangedPercent);
         Assert.Throws<ArgumentException>(() => new BitmapComparison(original, new BinaryImage(1, 1, [0])));
         Assert.Throws<ArgumentOutOfRangeException>(() => original[2, 0]);
     }

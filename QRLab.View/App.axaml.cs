@@ -23,7 +23,6 @@ public sealed class App : Application
                     [
                         new GaussianBlurMutation(),
                         new SaltAndPepperMutation(),
-                        new PerspectiveMutation(),
                         new OcclusionMutation()
                     ],
                     new ZxingCodeRecognizer(), new CsvRecognitionReportExporter())

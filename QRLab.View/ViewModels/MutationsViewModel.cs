@@ -16,7 +16,6 @@ public sealed partial class MutationsViewModel : ScreenViewModel, IDisposable
     private readonly Dictionary<MutationKind, MutationSettingsViewModel> _settings = new()
     {
         [MutationKind.GaussianBlur] = new GaussianBlurSettingsViewModel(new()),
-        [MutationKind.Perspective] = new PerspectiveSettingsViewModel(new()),
         [MutationKind.SaltAndPepper] = new SaltAndPepperSettingsViewModel(new()),
         [MutationKind.Occlusion] = new OcclusionSettingsViewModel(new())
     };
@@ -26,7 +25,6 @@ public sealed partial class MutationsViewModel : ScreenViewModel, IDisposable
     private IReadOnlyList<OperationViewModel> _frames = [];
     public Workspace.WorkspaceViewModel Workspace { get; }
     public GaussianBlurSettingsViewModel GaussianBlur => (GaussianBlurSettingsViewModel)_settings[MutationKind.GaussianBlur];
-    public PerspectiveSettingsViewModel Perspective => (PerspectiveSettingsViewModel)_settings[MutationKind.Perspective];
     public SaltAndPepperSettingsViewModel Noise => (SaltAndPepperSettingsViewModel)_settings[MutationKind.SaltAndPepper];
     public OcclusionSettingsViewModel Occlusion => (OcclusionSettingsViewModel)_settings[MutationKind.Occlusion];
     [ObservableProperty] private MutationSettingsViewModel? _selectedSettings;
@@ -90,7 +88,6 @@ public sealed partial class MutationsViewModel : ScreenViewModel, IDisposable
             SelectedSettings.PropertyChanged += SettingsChanged;
         }
         OnPropertyChanged(nameof(GaussianBlur));
-        OnPropertyChanged(nameof(Perspective));
         OnPropertyChanged(nameof(Noise));
         OnPropertyChanged(nameof(Occlusion));
         NotifySelection();

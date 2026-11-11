@@ -7,7 +7,6 @@
              x:DataType="vm:MutationsViewModel">
   <UserControl.DataTemplates>
     <DataTemplate DataType="{x:Type settings:GaussianBlurSettingsViewModel}"><local:GaussianBlurSettingsView/></DataTemplate>
-    <DataTemplate DataType="{x:Type settings:PerspectiveSettingsViewModel}"><local:PerspectiveSettingsView/></DataTemplate>
     <DataTemplate DataType="{x:Type settings:SaltAndPepperSettingsViewModel}"><local:SaltAndPepperSettingsView/></DataTemplate>
     <DataTemplate DataType="{x:Type settings:OcclusionSettingsViewModel}"><local:OcclusionSettingsView/></DataTemplate>
   </UserControl.DataTemplates>

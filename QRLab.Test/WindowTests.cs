@@ -329,10 +329,10 @@ public sealed class WindowTests
             Dispatcher.UIThread.RunJobs();
             Assert.Same(vm.Mutations, vm.SelectedScreen);
             Assert.NotNull(vm.Workspace.SelectedSample);
-            vm.Mutations.AddCommand.Execute(MutationKind.Perspective);
-            vm.Mutations.Perspective.AngleX = 19;
+            vm.Mutations.AddCommand.Execute(MutationKind.SaltAndPepper);
+            vm.Mutations.Noise.DensityPercent = 19;
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(19, Assert.IsType<PerspectiveMutationOptions>(vm.Mutations.Operations.Last().Options).AngleX);
+            Assert.Equal(19, Assert.IsType<SaltAndPepperOptions>(vm.Mutations.Operations.Last().Options).DensityPercent);
             Assert.NotSame(vm.Workspace.SelectedSample!.OriginalImage, vm.Mutations.PreviewImage);
             vm.Mutations.AddCommand.Execute(MutationKind.GaussianBlur);
             var blurred = vm.Mutations.PreviewImage;

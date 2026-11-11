@@ -10,7 +10,6 @@ public sealed class BitmapComparison
     public int FinalBlack { get; }
     public int Changed => AddedBlack + RemovedBlack;
     public int Unchanged => Total - Changed;
-    public double ChangedPercent => 100d * Changed / Total;
 
     public BitmapComparison(BinaryImage original, BinaryImage final)
     {

@@ -42,7 +42,6 @@ public sealed partial class RecognitionResultsViewModel : ObservableObject, IDis
     public int Mismatch => _workspace.Samples.Count(sample => sample.IsMismatch);
     public int CorrectedCodewords => _workspace.Samples.Sum(sample => sample.Result?.CorrectedCodewords ?? 0);
     public int SamplesWithCorrection => _workspace.Samples.Count(sample => sample.Result?.CorrectedCodewords > 0);
-    public bool HasCorrectionStatistics => _workspace.Samples.Any(sample => sample.Result?.CorrectedCodewords is not null);
     public int Timeout => _workspace.Samples.Count(sample => sample.Result?.Status == Status.Timeout);
     public string Average => Checked == 0 ? "—" : $"{_workspace.Samples.Where(sample => sample.Result is not null).Average(sample => sample.Result!.Milliseconds):N1} мс";
 
@@ -93,7 +92,6 @@ public sealed partial class RecognitionResultsViewModel : ObservableObject, IDis
         OnPropertyChanged(nameof(Mismatch));
         OnPropertyChanged(nameof(CorrectedCodewords));
         OnPropertyChanged(nameof(SamplesWithCorrection));
-        OnPropertyChanged(nameof(HasCorrectionStatistics));
         OnPropertyChanged(nameof(Timeout));
         OnPropertyChanged(nameof(Average));
     }

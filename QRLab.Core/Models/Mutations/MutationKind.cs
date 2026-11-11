@@ -1,3 +1,3 @@
 namespace QRLab.Core.Models.Mutations;
 
-public enum MutationKind { GaussianBlur, SaltAndPepper, Perspective, Occlusion }
+public enum MutationKind { GaussianBlur, SaltAndPepper, Occlusion = 3 }
