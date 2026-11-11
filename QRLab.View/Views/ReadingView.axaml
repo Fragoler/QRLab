@@ -48,7 +48,12 @@
             </StackPanel>
           </Border>
           <Grid Grid.Row="1" ColumnDefinitions="Auto,*" Margin="10" ColumnSpacing="12">
-            <ComboBox Name="RecognitionStatusFilter" Width="240" ItemsSource="{Binding Results.Filters}" ItemTemplate="{StaticResource RecognitionChoiceTemplate}" SelectedValue="{Binding Results.Filter, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}"/>
+            <ComboBox 
+              Name="RecognitionStatusFilter" Width="240" 
+              ItemsSource="{Binding Results.Filters}" 
+              ItemTemplate="{StaticResource RecognitionChoiceTemplate}" 
+              SelectedValue="{Binding Results.Filter, Mode=TwoWay}" 
+              SelectedValueBinding="{Binding Value, DataType=common:EnumOption}"/>
             <TextBox Grid.Column="1" Text="{Binding Results.Search, Mode=TwoWay}" PlaceholderText="⌕  Найти образец или содержимое" VerticalAlignment="Center"/>
           </Grid>
           <Border Grid.Row="2" Background="#171C1E" Padding="12,0">
@@ -115,10 +120,6 @@
                   <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Найден, расшифрован" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Success}"/><TextBlock Grid.Column="1" Text="{Binding Results.Success}" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Success}"/></Grid>
                   <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Расшифрован неверно" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Mismatch}" FontWeight="Bold"/><TextBlock Grid.Column="1" Text="{Binding Results.Mismatch}" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Mismatch}" FontWeight="Bold"/></Grid>
                   <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Тайм-аут" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Timeout}"/><TextBlock Grid.Column="1" Text="{Binding Results.Timeout}" Foreground="{x:Static converters:RecognitionStatusBrushConverter.Timeout}"/></Grid>
-                  <StackPanel Spacing="8" IsVisible="{Binding Results.HasCorrectionStatistics}">
-                    <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Исправлено кодовых слов" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.CorrectedCodewords}"/></Grid>
-                    <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Образцов с исправлениями" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding Results.SamplesWithCorrection}"/></Grid>
-                  </StackPanel>
                 </StackPanel>
               </ScrollViewer>
             </TabItem>
@@ -150,7 +151,6 @@
               <Button Grid.Column="1" Content="Сбросить вид" Classes="flat" Command="{Binding #ReadingPreview.ResetViewCommand}"/>
             </Grid>
             <TextBlock Text="{Binding Workspace.SelectedSample.Status}" Foreground="{Binding Workspace.SelectedSample.Result, Converter={StaticResource RecognitionStatusBrush}}" TextWrapping="Wrap"/>
-            <TextBlock Text="{Binding Workspace.SelectedSample.CorrectionStatistics}" Classes="muted" TextWrapping="Wrap"/>
             <TextBlock Text="{Binding Workspace.SelectedSample.Content}" Classes="mono" TextTrimming="CharacterEllipsis"/>
             <Button Command="{ReflectionBinding $parent[Window].DataContext.NavigateCommand}" CommandParameter="02" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
               <StackPanel Orientation="Horizontal" Spacing="7">

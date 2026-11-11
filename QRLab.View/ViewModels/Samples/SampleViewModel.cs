@@ -39,8 +39,6 @@ public sealed class SampleViewModel : ObservableObject, IDisposable
     public bool IsSuccess => Result is { Status: ResultStatus.Success };
     public bool IsFailure => Result?.Status is ResultStatus.Failed or ResultStatus.Timeout or ResultStatus.NotFound;
     public bool IsMismatch => Result?.Status == ResultStatus.Mismatch;
-    public string CorrectionStatistics => Result?.CorrectedCodewords is { } count
-        ? $"Исправлено кодовых слов: {count:N0} · уровень {Result.ErrorCorrectionLevel ?? "—"}" : "";
     public string Time => Result is null ? "—" : $"{Result.Milliseconds:N1} мс";
     public string Chain => Operations.Count == 0 ? MutationChoices.Original.Name : string.Join(" → ", Operations.Select(operation => operation.Name));
     public string Decoded => Result?.DecodedContent ?? "—";
@@ -62,7 +60,6 @@ public sealed class SampleViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsSuccess));
         OnPropertyChanged(nameof(IsFailure));
         OnPropertyChanged(nameof(IsMismatch));
-        OnPropertyChanged(nameof(CorrectionStatistics));
         OnPropertyChanged(nameof(Time));
         OnPropertyChanged(nameof(Decoded));
     }
