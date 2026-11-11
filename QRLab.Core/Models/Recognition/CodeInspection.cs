@@ -28,5 +28,9 @@ public sealed record CodeInspection(
     string Conclusion, IReadOnlyList<RegionDamage> Regions, IReadOnlyList<CorrectionBlock> Blocks,
     int DamagedCodewords, int TotalCodewords, int CorrectionCapacity)
 {
-    public bool IsReferenceEstimate => Observed is null;
+    public InspectionBasis Basis { get; init; }
+    public bool IsReferenceEstimate => Observed is null || Basis == InspectionBasis.ReferenceGrid;
+    public BitmapComparison? Modules { get; init; }
+    public IReadOnlyList<InspectionParameter> Parameters { get; init; } = [];
+    public IReadOnlyList<InspectionSection> Sections { get; init; } = [];
 }

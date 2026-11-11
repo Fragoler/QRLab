@@ -3,8 +3,13 @@
              xmlns:vm="using:QRLab.View.ViewModels"
              xmlns:c="using:QRLab.View.Controls"
              xmlns:icons="using:QRLab.View.Controls"
+             xmlns:recognition="clr-namespace:QRLab.Core.Models.Recognition;assembly=QRLab.Core"
+             xmlns:converters="using:QRLab.View.Converters"
              x:Class="QRLab.View.Views.ComparisonView"
              x:DataType="vm:ComparisonViewModel">
+  <UserControl.Resources>
+    <converters:RecognitionStatusBrushConverter x:Key="RecognitionStatusBrush"/>
+  </UserControl.Resources>
   <Grid Margin="18" RowDefinitions="Auto,*" RowSpacing="16">
     <StackPanel Spacing="4">
       <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"/>
@@ -55,31 +60,33 @@
         </Grid>
         <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="12">
           <Border Classes="card">
-            <StackPanel>
+            <Grid RowDefinitions="Auto,*">
               <Border Classes="panelHead">
                 <Grid ColumnDefinitions="*, Auto">
                   <TextBlock Text="{Binding Workspace.SelectedSample.Name}" Classes="heading"/>
-                  <TextBlock Grid.Column="1" Text="{Binding Workspace.SelectedSample.Status}" TextWrapping="Wrap"/> 
+                  <TextBlock Grid.Column="1" Text="{Binding Workspace.SelectedSample.Status}" 
+                             Foreground="{Binding Workspace.SelectedSample.Result, Converter={StaticResource RecognitionStatusBrush}}" 
+                             TextWrapping="Wrap"
+                             ToolTip.Tip="{Binding Workspace.SelectedSample.Result.Error}"/>
                 </Grid>
               </Border>
-              <Grid ColumnDefinitions="*, *" Margin="14" ColumnSpacing="10">
-                <StackPanel  Spacing="10">
-                  <TextBlock Text="{Binding Workspace.SelectedSample.Format}" Classes="accent"/>
-                  <TextBlock Text="{Binding Workspace.SelectedSample.Chain}" TextWrapping="Wrap"/>
-                  <TextBlock Text="{Binding Workspace.SelectedSample.Time, StringFormat='Обработка: {0}'}" Classes="muted"/>
-                  <Button Content="Открыть в мутациях →" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).NavigateCommand}" CommandParameter="02"/>
-                </StackPanel>
-                <Grid Grid.Column="1" ColumnDefinitions="Auto,Auto">
-                  <StackPanel Spacing="5">
-                    <TextBlock Text="Ожидаемое содержимое" Classes="label"/>
-                    <TextBlock Text="{Binding Workspace.SelectedSample.Content}" TextWrapping="Wrap" MaxHeight="40" Classes="mono"/>
-                    <TextBlock Text="Распознано" Classes="label"/>
-                    <TextBlock Text="{Binding Workspace.SelectedSample.Decoded}" TextWrapping="Wrap" MaxHeight="40" Classes="mono"/>
+              <Grid Grid.Row="1" ColumnDefinitions="*, *" Margin="14" ColumnSpacing="10">
+                <Grid RowDefinitions="*,Auto" RowSpacing="10">
+                  <StackPanel  Spacing="10">
+                    <TextBlock Text="{Binding Workspace.SelectedSample.Format}" Classes="accent"/>
+                    <TextBlock Text="{Binding Workspace.SelectedSample.Chain}" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding Workspace.SelectedSample.Time, StringFormat='Обработка: {0}'}" Classes="muted"/>
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding Workspace.SelectedSample.Result.Error}" Classes="danger" TextWrapping="Wrap" MaxHeight="32"/>
+                  <Button Grid.Row="1" VerticalAlignment="Bottom" Content="Открыть в мутациях →" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).NavigateCommand}" CommandParameter="02"/>
                 </Grid>
+                <StackPanel Grid.Column="1" Spacing="5">
+                  <TextBlock Text="Ожидаемое содержимое" Classes="label"/>
+                  <TextBlock Text="{Binding Workspace.SelectedSample.Content}" TextWrapping="Wrap" MaxHeight="40" Classes="mono"/>
+                  <TextBlock Text="Распознано" Classes="label"/>
+                  <TextBlock Text="{Binding Workspace.SelectedSample.Decoded}" TextWrapping="Wrap" MaxHeight="40" Classes="mono"/>
+                </StackPanel>
               </Grid>
-            </StackPanel>
+            </Grid>
           </Border>
           <Border Grid.Column="1" Classes="card" Padding="14">
             <StackPanel Spacing="10">
@@ -119,27 +126,25 @@
             <Border Classes="panelHead"><TextBlock Text="Данные распознавания" Classes="heading"/></Border>
             <ScrollViewer Grid.Row="1" Padding="14,14,24,14" HorizontalScrollBarVisibility="Disabled">
               <StackPanel Spacing="9">
-                <TextBlock Text="Модули" Classes="heading"/>
-                <TextBlock Text="{Binding Summary}" TextWrapping="Wrap"/>
-                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6" IsVisible="{Binding CanCompare}">
-                  <TextBlock Text="{Binding Comparison.AddedBlack, StringFormat='Белый → чёрный: {0:N0}'}" Foreground="#37C3E1"/>
-                  <TextBlock Grid.Row="1" Text="{Binding Comparison.RemovedBlack, StringFormat='Чёрный → белый: {0:N0}'}" Foreground="#F57373"/>
-                  <TextBlock Grid.Row="2" Text="{Binding Comparison.OriginalBlack, StringFormat='Чёрных в исходнике: {0:N0}'}"/>
-                  <TextBlock Grid.Row="3" Text="{Binding Comparison.FinalBlack, StringFormat='Чёрных в результате: {0:N0}'}"/>
-                  <TextBlock Grid.Row="4" Text="{Binding Comparison.Unchanged, StringFormat='Без изменений: {0:N0}'}" Classes="muted"/>
-                </Grid>
-                
-                <Border Classes="divider"/>
-                
-                <TextBlock Text="Анализ" Classes="heading"/>
                 <TextBlock Text="Нет данных" IsVisible="{Binding !HasInspection}" Classes="muted"/>
-                <ItemsControl Name="DamageDiagnostics" ItemsSource="{Binding DiagnosticValues}">
+                <ItemsControl Name="DamageDiagnostics" ItemsSource="{Binding Sections}">
                   <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:DiagnosticValue">
-                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,3">
-                        <TextBlock Text="{Binding Name}" Classes="muted" TextWrapping="Wrap"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Value}" Classes="mono"/>
-                      </Grid>
+                    <DataTemplate x:DataType="recognition:InspectionSection">
+                      <Border Background="#171C1E" CornerRadius="4" Padding="10" Margin="0,0,0,10">
+                        <StackPanel Spacing="8">
+                          <TextBlock Text="{Binding Title}" Classes="heading" TextWrapping="Wrap"/>
+                          <ItemsControl ItemsSource="{Binding Parameters}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="recognition:InspectionParameter">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,4">
+                                  <TextBlock Text="{Binding Name}" Classes="muted" TextWrapping="Wrap"/>
+                                  <TextBlock Grid.Column="1" Text="{Binding Value}" Classes="mono"/>
+                                </Grid>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                      </Border>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>

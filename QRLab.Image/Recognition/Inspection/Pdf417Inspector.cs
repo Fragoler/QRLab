@@ -64,7 +64,12 @@ internal sealed class Pdf417Inspector : CodeInspector
         return new("PDF417", layout, observed, probe, null,
             observed is null ? ReferenceWarning : "Границы найдены PDF417-детектором; для учебной выборки используются число строк и ширина известного образца.",
             "",
-            conclusion, Damage(original, compared, layout), [block], damaged.Count, words.Length, parity / 2);
+            conclusion, Damage(original, compared, layout), [block], damaged.Count, words.Length, parity / 2)
+        {
+            Basis = observed is null ? InspectionBasis.ReferenceGrid : InspectionBasis.DetectorBounds,
+            Parameters = [new(InspectionCategory.Symbol, "Строки / столбцы", $"{rows.Count} / {columns}"),
+                new(InspectionCategory.Correction, "Уровень коррекции", level.ToString())]
+        };
     }
 
     private static BinaryImage? Capture(SamplePreview sample, BitMatrix raster)

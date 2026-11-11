@@ -134,8 +134,10 @@ public sealed class WindowTests
             legend.ShowAt(legendButton); Dispatcher.UIThread.RunJobs();
             Assert.True(legend.IsOpen); legend.Hide();
             var diagnostics = window.GetVisualDescendants().OfType<ItemsControl>().Single(control => control.Name == "DamageDiagnostics");
-            Assert.NotEmpty(vm.Comparison.DiagnosticValues);
-            Assert.Contains(vm.Comparison.DiagnosticValues, value => value.Name == "Предел коррекции ошибок");
+            Assert.NotEmpty(vm.Comparison.Sections);
+            Assert.Same(vm.Workspace.SelectedSample!.Result!.Inspection!.Sections, vm.Comparison.Sections);
+            Assert.Same(vm.Workspace.SelectedSample.Result.Inspection.Modules, vm.Comparison.Comparison);
+            Assert.Contains(vm.Comparison.Sections.SelectMany(section => section.Parameters), value => value.Name == "Предел коррекции ошибок");
             var dataCard = diagnostics.GetVisualAncestors().OfType<Border>().First(border => border.Classes.Contains("card"));
             Assert.Contains(dataCard.GetVisualDescendants().OfType<TextBlock>(), text => text.Text == "Данные распознавания");
             vm.Workspace.NextCommand.Execute(null); Dispatcher.UIThread.RunJobs();

@@ -12,6 +12,7 @@ internal abstract class LinearCodeInspector : CodeInspector
 {
     protected abstract string Name { get; }
     protected abstract string ChecksumDescription { get; }
+    protected abstract int ChecksumModulus { get; }
     protected abstract OneDReader CreateReader();
     protected abstract double CenterOffset { get; }
     protected abstract double CenterDistance(int encodedWidth);
@@ -23,6 +24,7 @@ internal abstract class LinearCodeInspector : CodeInspector
         var probe = Probe(sample, raster);
         var bounds = Bounds(original);
         var observed = CaptureRow(raster, original, bounds.Left, bounds.Right);
+        var basis = observed is null ? InspectionBasis.ReferenceGrid : InspectionBasis.Scanline;
         var rowProbe = Build(probe.Width, probe.Height, (x, _) => probe[x, probe.Height / 2]);
         var guardIntact = !layout.Cells.Select((cell, index) => (cell, index)).Any(item => item.cell.Role == ModuleRole.Guard
             && original[item.index % layout.Width, item.index / layout.Width] != rowProbe[item.index % layout.Width, item.index / layout.Width]);
@@ -38,7 +40,11 @@ internal abstract class LinearCodeInspector : CodeInspector
             ? " Защитные штрихи сохранены; вероятен отказ распознавания символов или проверки контрольной суммы. Без внутренних данных декодера эти причины неразличимы."
             : " Не подтверждены стартовые / защитные штрихи. " + ReferenceWarning;
         return new(Name, layout, observed, rowProbe, null, sampling, "",
-            conclusion, Damage(original, compared, layout), [], damaged.Count, total, 0);
+            conclusion, Damage(original, compared, layout), [], damaged.Count, total, 0)
+        {
+            Basis = basis,
+            Parameters = [new(InspectionCategory.Correction, "Модуль контрольной суммы", ChecksumModulus.ToString())]
+        };
     }
 
     private BinaryImage? CaptureRow(BitMatrix raster, BinaryImage original, int first, int last)
@@ -82,6 +88,7 @@ internal abstract class LinearCodeInspector : CodeInspector
 
 internal sealed class Ean13Inspector : LinearCodeInspector
 {
+    protected override int ChecksumModulus => 10;
     protected override string Name => "EAN-13";
     protected override OneDReader CreateReader() => new EAN13Reader();
     protected override double CenterOffset => 1.5;
@@ -107,6 +114,7 @@ internal sealed class Ean13Inspector : LinearCodeInspector
 
 internal sealed class Code128Inspector : LinearCodeInspector
 {
+    protected override int ChecksumModulus => 103;
     protected override string Name => "Code 128";
     protected override OneDReader CreateReader() => new Code128Reader();
     protected override double CenterOffset => 5.5;
