@@ -152,10 +152,11 @@
             </Grid>
             <TextBlock Text="{Binding Workspace.SelectedSample.Status}" Foreground="{Binding Workspace.SelectedSample.Result, Converter={StaticResource RecognitionStatusBrush}}" TextWrapping="Wrap"/>
             <TextBlock Text="{Binding Workspace.SelectedSample.Content}" Classes="mono" TextTrimming="CharacterEllipsis"/>
-            <Button Command="{ReflectionBinding $parent[Window].DataContext.NavigateCommand}" CommandParameter="02" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+            <Button Command="{ReflectionBinding $parent[Window].DataContext.NavigateCommand}" CommandParameter="04" 
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
               <StackPanel Orientation="Horizontal" Spacing="7">
                 <icons:SvgIcon Source="arrow-right"/>
-                <TextBlock Text="Открыть мутации"/>
+                <TextBlock Text="Открыть сравнение"/>
               </StackPanel>
             </Button>
           </StackPanel>

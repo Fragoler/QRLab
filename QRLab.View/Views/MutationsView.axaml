@@ -87,20 +87,23 @@
       <Grid Grid.Column="2" RowDefinitions="*,400,Auto" RowSpacing="10">
           <Border Grid.Row="0" Classes="card">
             <Grid RowDefinitions="Auto,200,*">
-              <Border Classes="panelHead"><TextBlock Text="Последовательность операций" Classes="heading"/></Border>
-                <ListBox Grid.Row="1"  ItemsSource="{Binding Operations}" SelectedItem="{Binding SelectedOperation, Mode=TwoWay}">
-                  <ListBox.ItemTemplate>
-                    <DataTemplate x:DataType="mutations:OperationViewModel">
-                      <Grid ColumnDefinitions="24,*">
-                        <TextBlock Text="{Binding Number}" Classes="accent" FontSize="10"/>
-                        <StackPanel Grid.Column="1" Spacing="4">
-                          <TextBlock Text="{Binding Name}" FontSize="12"/>
-                          <TextBlock Text="{Binding Details}" Classes="muted" FontSize="10" TextWrapping="Wrap"/>
-                        </StackPanel>
-                      </Grid>
-                    </DataTemplate>
-                  </ListBox.ItemTemplate>
-                </ListBox>
+              <Border Classes="panelHead">
+                <TextBlock Text="Последовательность операций" Classes="heading"/>
+              </Border>
+              <ListBox Grid.Row="1" ItemsSource="{Binding Operations}" 
+                       SelectedItem="{Binding SelectedOperation, Mode=TwoWay}">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="mutations:OperationViewModel">
+                    <Grid ColumnDefinitions="24,*">
+                      <TextBlock Text="{Binding Number}" Classes="accent" FontSize="10"/>
+                      <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock Text="{Binding Name}" FontSize="12"/>
+                        <TextBlock Text="{Binding Details}" Classes="muted" FontSize="10" TextWrapping="Wrap"/>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
             </Grid>
           </Border>
         <Border Grid.Row="1" Classes="card">
@@ -110,8 +113,20 @@
         </Border>
         <Border Grid.Row="2" Classes="card">
           <StackPanel Margin="14" Spacing="8">
-            <Button Content="Сбросить цепочку" Command="{Binding ResetCommand}" HorizontalAlignment="Stretch"/>
-            <Button Content="К распознаванию" Command="{ReflectionBinding $parent[Window].DataContext.NavigateCommand}" CommandParameter="03" HorizontalAlignment="Stretch"/>
+            <Button Command="{Binding ResetCommand}"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+              <StackPanel Orientation="Horizontal" Spacing="7">
+                <icons:SvgIcon Source="reload"/>
+                <TextBlock Text="Сбросить цепочку"/>
+              </StackPanel>
+            </Button>
+            <Button Command="{ReflectionBinding $parent[Window].DataContext.NavigateCommand}" CommandParameter="03" 
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+              <StackPanel Orientation="Horizontal" Spacing="7">
+                <icons:SvgIcon Source="arrow-right"/>
+                <TextBlock Text="К распознаванию"/>
+              </StackPanel>
+            </Button>
           </StackPanel>
         </Border>
       </Grid>

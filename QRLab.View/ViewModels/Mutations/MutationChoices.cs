@@ -14,10 +14,10 @@ public static class MutationChoices
     public static IReadOnlyList<EnumOption<MutationKind>> Operations { get; } = Array.AsReadOnly<EnumOption<MutationKind>>(
         [
             new(MutationKind.GaussianBlur, "Размытие Гаусса", "drop"),
-            new(MutationKind.SaltAndPepper, "Соль и Перец", "droplets"), 
+            new(MutationKind.SaltAndPepper, "Соль и Перец", "salt-and-pepper"),
             new(MutationKind.Occlusion, "Закрытая область", "layers"),
-            new(MutationKind.JpegCompression, "Сжатие JPEG", "reload"),
-            new(MutationKind.Contrast, "Контраст", "config")
+            new(MutationKind.JpegCompression, "Сжатие JPEG", "convert-3d-cube"),
+            new(MutationKind.Contrast, "Контраст", "contrast")
         ]);
     
     public static FrameLabel Original { get; } = new("Исходник", "Защищён");

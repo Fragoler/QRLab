@@ -3,6 +3,7 @@
              xmlns:vm="using:QRLab.View.ViewModels"
              xmlns:settings="using:QRLab.View.ViewModels.Mutations"
              xmlns:local="using:QRLab.View.Views.Mutations"
+             xmlns:icons="using:QRLab.View.Controls"
              x:Class="QRLab.View.Views.Mutations.MutationSettingsView"
              x:DataType="vm:MutationsViewModel">
   <UserControl.DataTemplates>
@@ -13,7 +14,10 @@
     <DataTemplate DataType="{x:Type settings:OcclusionSettingsViewModel}"><local:OcclusionSettingsView/></DataTemplate>
   </UserControl.DataTemplates>
   <StackPanel Spacing="8">
-    <TextBlock Text="Параметры операции" Classes="heading"/>
+    <StackPanel Orientation="Horizontal" Spacing="7">
+      <icons:SvgIcon Source="config"/>
+      <TextBlock Text="Параметры операции" Classes="heading"/>
+    </StackPanel>
     <ContentControl Content="{Binding SelectedSettings}" HorizontalContentAlignment="Stretch"/>
   </StackPanel>
 </UserControl>
