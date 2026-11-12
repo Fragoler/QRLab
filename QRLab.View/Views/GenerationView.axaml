@@ -77,8 +77,11 @@
               </ListBox>
               <StackPanel IsVisible="{Binding Settings.IsQr}" Spacing="5">
                 <TextBlock Text="Класс размера QR" Classes="label"/>
-                <NumericUpDown Value="{Binding Settings.Qr.Version, Mode=TwoWay}" Minimum="{Binding Settings.Limits.QrVersion.Minimum}" Maximum="{Binding Settings.Limits.QrVersion.Maximum}" FormatString="0"/>
-                <TextBlock Text="0 — авто; 1–40: от 21×21 до 177×177 модулей" Classes="muted" FontSize="10" TextWrapping="Wrap"/>
+                <NumericUpDown Value="{Binding Settings.Qr.Version, Mode=TwoWay}" 
+                               Minimum="{Binding Settings.Limits.QrVersion.Minimum}" 
+                               Maximum="{Binding Settings.Limits.QrVersion.Maximum}" 
+                               FormatString="0"
+                               ToolTip.Tip="0 — авто; 1–40: от 21×21 до 177×177 модулей"/>
               </StackPanel>
               <StackPanel IsVisible="{Binding Settings.IsBarcode}" Spacing="5">
                 <TextBlock Text="Тип штрихкода" Classes="label"/>
@@ -97,10 +100,7 @@
                 <NumericUpDown Value="{Binding Settings.RandomLength, Mode=TwoWay}" Minimum="{Binding Settings.Limits.ContentLength.Minimum}" Maximum="{Binding Settings.Limits.ContentLength.Maximum}" FormatString="0"/>
                 <TextBlock Text="Новая строка для каждого образца: a–z, 0–9. Для EAN-13 — 12 или 13 цифр с контрольной суммой." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
               </StackPanel>
-              <TextBlock Text="Текущее количество символов / Ёмкость кода в символах" Classes="label" TextWrapping="Wrap"/>
               <TextBlock Text="{Binding Settings.ContentUsage}"/>
-              <TextBlock Text="Ёмкость оценена для алфавита текста, без учёта размера изображения. QR «авто» — версия 40. Для пакета — самая длинная строка. EAN-13 включает контрольную цифру." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
-
               <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding Settings.IsBatch}">
                 <StackPanel>
                   <TextBlock Text="Первый номер" Classes="label"/>

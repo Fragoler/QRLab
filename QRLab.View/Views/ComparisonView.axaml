@@ -11,9 +11,20 @@
     <converters:RecognitionStatusBrushConverter x:Key="RecognitionStatusBrush"/>
   </UserControl.Resources>
   <Grid Margin="18" RowDefinitions="Auto,*" RowSpacing="16">
-    <StackPanel Spacing="4">
-      <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"/>
-    </StackPanel>
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"/>
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <Button Content="Остановить" Command="{Binding Reading.RunCancelCommand}" IsVisible="{Binding Reading.IsBusy}"/>
+        <Button Classes="primary" Command="{Binding Reading.RunCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="7">
+            <icons:SvgIcon Source="play"/>
+            <TextBlock Text="Запустить распознавание"/>
+          </StackPanel>
+        </Button>
+      </StackPanel>
+    </Grid>
     <Grid Grid.Row="1" ColumnDefinitions="*,340" ColumnSpacing="12">
       <Grid RowDefinitions="*,Auto,Auto" RowSpacing="12">
         <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
@@ -27,7 +38,7 @@
           </Border>
           <Border Grid.Column="1" Classes="card">
             <Grid RowDefinitions="Auto,*,Auto">
-              <Border Classes="panelHead"><TextBlock Text="Б · Матрица считывания" Classes="heading"/></Border>
+              <Border Classes="panelHead"><TextBlock Text="Б · Матрица декодера" Classes="heading"/></Border>
               <c:BitmapPreview Grid.Row="1" Name="FinalBitmapPreview" Image="{Binding FinalBitmap}" Reference="{Binding OriginalBitmap}" Layout="{Binding Layout}" HighlightZones="{Binding HighlightZones}" HighlightCodewords="{Binding HighlightCodewords}" HighlightBlocks="{Binding HighlightBlocks}" HighlightChanges="{Binding HighlightChanges}" ShowModules="{Binding ShowResultCode}" Zoom="{Binding Zoom, Mode=TwoWay}" PanOffset="{Binding PanOffset, Mode=TwoWay}" Margin="16" MinHeight="180"/>
               <TextBlock Grid.Row="1" Name="FinalMatrixPlaceholder" IsVisible="{Binding !HasFinalBitmap}" Text="{Binding FinalPlaceholder}" Classes="muted" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="16"/>
               <Border Grid.Row="2" Padding="12"><TextBlock Text="{Binding FinalDimensions}" Classes="muted"/></Border>
@@ -90,16 +101,10 @@
           </Border>
           <Border Grid.Column="1" Classes="card" Padding="14">
             <Grid ColumnDefinitions="*,*">
-              <Grid RowDefinitions="*,Auto">
-                <StackPanel Spacing="10">
-                  <CheckBox Name="ShowResultCodeCheckBox" Content="Код результата" IsChecked="{Binding ShowResultCode}" ToolTip.Tip="Показывать модули кода на правой матрице. При отключении цветная подсветка остаётся видимой."/>
-                  <CheckBox Content="Изменения" IsChecked="{Binding HighlightChanges}" IsEnabled="{Binding CanCompare}"/>
-                </StackPanel>
-                <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto" ColumnSpacing="7">
-                  <Button Content="Запустить распознавание" Classes="primary" Command="{Binding Reading.RunCommand}"/>
-                  <Button Grid.Column="1" Content="Остановить" IsVisible="{Binding Reading.IsBusy}" Command="{Binding Reading.RunCancelCommand}"/>
-                </Grid>
-              </Grid>
+              <StackPanel Spacing="10">
+                <CheckBox Name="ShowResultCodeCheckBox" Content="Код результата" IsChecked="{Binding ShowResultCode}" ToolTip.Tip="Показывать модули кода на правой матрице. При отключении цветная подсветка остаётся видимой."/>
+                <CheckBox Content="Изменения" IsChecked="{Binding HighlightChanges}" IsEnabled="{Binding CanCompare}"/>
+              </StackPanel>
               <StackPanel Grid.Column="1" Spacing="10">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                   <CheckBox Content="Зоны QR" IsChecked="{Binding HighlightZones}" IsEnabled="{Binding IsQr}"/>
