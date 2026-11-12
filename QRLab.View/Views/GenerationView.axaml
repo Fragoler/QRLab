@@ -186,7 +186,7 @@
           </StackPanel>
         </Grid>
       </Border>
-      <Grid Grid.Column="1" RowDefinitions="*,170" RowSpacing="12">
+      <Grid Grid.Column="1" RowDefinitions="*,Auto" RowSpacing="12">
         <Border Classes="card" ClipToBounds="True">
           <Grid RowDefinitions="*,40">
             <Border Grid.Row="0" Background="#0D1112" Padding="30">
