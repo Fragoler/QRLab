@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:QRLab.View.ViewModels.Mutations"
              xmlns:local="using:QRLab.View.Views.Mutations"
+             xmlns:icons="using:QRLab.View.Controls"
              x:Class="QRLab.View.Views.Mutations.MarkerSettingsView"
              x:DataType="vm:MarkerSettingsViewModel">
   <StackPanel Spacing="7">
@@ -9,9 +10,19 @@
     <TextBox Text="{Binding Color, Mode=TwoWay}" PlaceholderText="#000000"/>
     <local:NumericMutationParameter Label="Толщина, пикс." Value="{Binding Thickness, Mode=TwoWay}" Minimum="0.1" Maximum="256"/>
     <TextBlock Text="{Binding StrokeCount, StringFormat='Штрихов: {0}'}" Classes="muted"/>
-    <Grid ColumnDefinitions="*,*">
-        <Button Content="Отменить" Command="{Binding UndoCommand}"/>
-        <Button Grid.Column="1" Content="Очистить" Command="{Binding ClearCommand}"/>
+    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+      <Button Command="{Binding UndoCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="7">
+          <icons:SvgIcon Source="undo"/>
+          <TextBlock Text="Отменить"/>
+        </StackPanel>
+      </Button>
+      <Button Grid.Column="1" Command="{Binding ClearCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="7">
+          <icons:SvgIcon Source="erase"/>
+          <TextBlock Text="Очистить"/>
+        </StackPanel>
+      </Button>
     </Grid>
   </StackPanel>
 </UserControl>

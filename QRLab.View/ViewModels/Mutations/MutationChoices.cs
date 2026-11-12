@@ -21,14 +21,14 @@ public static class MutationChoices
 
     public static IReadOnlyList<EnumOption<MutationKind>> Operations { get; } = Array.AsReadOnly<EnumOption<MutationKind>>(
         [
-            new(MutationKind.GaussianBlur, "Размытие Гаусса", "drop"),
+            new(MutationKind.GaussianBlur, "Размытие Гаусса", "blur"),
             new(MutationKind.SaltAndPepper, "Соль и Перец", "salt-and-pepper"),
             new(MutationKind.Occlusion, "Закрытая область", "layers"),
             new(MutationKind.JpegCompression, "Сжатие JPEG", "convert-3d-cube"),
             new(MutationKind.Contrast, "Контраст", "contrast"),
             new(MutationKind.Marker, "Маркер", "pencil"),
-            new(MutationKind.Dilation, "Расширение", "plus"),
-            new(MutationKind.Erosion, "Эрозия", "erase"),
+            new(MutationKind.Dilation, "Расширение", "bigger"),
+            new(MutationKind.Erosion, "Эрозия", "smaller"),
             new(MutationKind.PrintDefects, "Непропечатанные участки", "droplets")
         ]);
     
@@ -41,14 +41,11 @@ public static class MutationChoices
         ContrastOptions contrast => $"Снижение {contrast.Reduction:N2} • центр {contrast.Center:N2}",
         MarkerOptions marker => $"{marker.Strokes.Count} штр. • {marker.Thickness:N1} px • {marker.Color}",
         MorphologyOptions morphology => $"Ядро {2 * morphology.RadiusX + 1} × {2 * morphology.RadiusY + 1} px • повторений: {morphology.Iterations}",
-        PrintDefectsOptions defects => $"{defects.Count} шт. • Ø {defects.Diameter:N1} px • {PrintDefectDistributions.Single(d => d.Id == defects.Distribution).Name} • разброс ±{defects.SizeVariationPercent:N0}% • {DescribeSeed(defects.Seed, defects.RandomForEachSample)}",
+        PrintDefectsOptions defects => $"{defects.Count} шт. • Ø {defects.Diameter:N1} px • {PrintDefectDistributions.Single(d => d.Id == defects.Distribution).Name} • разброс ±{defects.SizeVariationPercent:N0}%",
         OcclusionOptions area => $"{OcclusionShapes.Single(shape => shape.Id == area.Shape).Name} • {area.Width:N0} × {area.Height:N0}% • {area.Angle:N0}° • {area.Color}",
-        SaltAndPepperOptions noise => $"{noise.DensityPercent:N1}% • белых {noise.SaltPercent:N0}% • {DescribeSeed(noise.Seed, noise.RandomForEachSample)}",
+        SaltAndPepperOptions noise => $"{noise.DensityPercent:N1}% • белых {noise.SaltPercent:N0}%",
         _ => throw new ArgumentOutOfRangeException(nameof(options))
     };
-
-    private static string DescribeSeed(int seed, bool randomForEachSample) =>
-        randomForEachSample ? $"seed {seed} + № образца" : $"seed {seed}";
 }
 
 public sealed record FrameLabel(string Name, string Description);
