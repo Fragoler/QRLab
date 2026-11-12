@@ -9,11 +9,69 @@ namespace QRLab.Test;
 
 public sealed class MutationTests
 {
+    [Theory]
+    [InlineData(0)]
+    [InlineData(25)]
+    [InlineData(100)]
+    public void JpegCompressionReturnsDecodedJpegAsPngAndPreservesSource(int quality)
+    {
+        var source = Image(65, canvas =>
+        {
+            canvas.Clear(SKColors.White);
+            using var paint = new SKPaint { Color = SKColors.Black };
+            canvas.DrawRect(11, 13, 35, 37, paint);
+        });
+        var before = source.Data.ToArray();
+        var result = new JpegCompressionMutation().Apply(source, new JpegCompressionOptions { Quality = quality });
+        using var original = Decode(source);
+        using var pixels = Decode(result);
+        using var image = SKImage.FromEncodedData(source.Data.Span);
+        using var jpeg = image.Encode(SKEncodedImageFormat.Jpeg, quality);
+        using var expected = SKBitmap.Decode(jpeg);
+        Assert.Equal(expected.Pixels, pixels.Pixels);
+        Assert.False(original.Pixels.SequenceEqual(pixels.Pixels));
+        Assert.Equal(source.Width, result.Width);
+        Assert.Equal(source.Height, result.Height);
+        Assert.Equal(before, source.Data.ToArray());
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(101)]
+    public void JpegCompressionRejectsInvalidQuality(int quality) =>
+        Assert.Throws<ArgumentException>(() => new JpegCompressionMutation().Apply(
+            Image(32, c => c.Clear(SKColors.White)), new JpegCompressionOptions { Quality = quality }));
+
+    [Fact]
+    public void JpegQualityEditingRebuildsFollowingFramesAndSurvivesUndoRedoAndSerialization()
+    {
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        var editor = vm.Mutations;
+        editor.AddCommand.Execute(MutationKind.JpegCompression);
+        var first = editor.Operations[0];
+        editor.AddCommand.Execute(MutationKind.GaussianBlur);
+        var last = editor.Operations[1].Image;
+        editor.SelectedOperation = first;
+        var settings = Assert.IsType<QRLab.View.ViewModels.Mutations.JpegCompressionSettingsViewModel>(editor.SelectedSettings);
+        settings.Quality = 10;
+        var options = Assert.IsType<JpegCompressionOptions>(editor.Operations[0].Options);
+        Assert.Equal(10, options.Quality);
+        Assert.NotSame(last, editor.Operations[1].Image);
+        MutationOptions serializedOptions = options;
+        var json = System.Text.Json.JsonSerializer.Serialize(serializedOptions);
+        Assert.Equal(options, System.Text.Json.JsonSerializer.Deserialize<MutationOptions>(json));
+        editor.UndoCommand.Execute(null);
+        editor.UndoCommand.Execute(null);
+        editor.RedoCommand.Execute(null);
+        Assert.Equal(10, Assert.IsType<QRLab.View.ViewModels.Mutations.JpegCompressionSettingsViewModel>(editor.SelectedSettings).Quality);
+        Assert.Single(editor.Operations);
+    }
+
     [Fact]
     public void EditorOffersOnlyMutationsThatPreserveTheImageGrid()
     {
         using var vm = TestApplicationFactory.CreateMainWindow();
-        Assert.Equal(new[] { MutationKind.GaussianBlur, MutationKind.SaltAndPepper, MutationKind.Occlusion },
+        Assert.Equal(new[] { MutationKind.GaussianBlur, MutationKind.SaltAndPepper, MutationKind.Occlusion, MutationKind.JpegCompression },
             vm.Mutations.AvailableMutations.Select(option => option.Id));
     }
 

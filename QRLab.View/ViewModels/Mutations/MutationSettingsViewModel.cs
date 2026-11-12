@@ -12,6 +12,7 @@ public abstract class MutationSettingsViewModel : ObservableObject
         GaussianBlurOptions blur => new GaussianBlurSettingsViewModel(blur),
         SaltAndPepperOptions noise => new SaltAndPepperSettingsViewModel(noise),
         OcclusionOptions area => new OcclusionSettingsViewModel(area),
+        JpegCompressionOptions jpeg => new JpegCompressionSettingsViewModel(jpeg),
         _ => throw new ArgumentOutOfRangeException(nameof(options))
     };
 }

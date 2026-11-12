@@ -15,7 +15,8 @@ public static class MutationChoices
         [
             new(MutationKind.GaussianBlur, "Размытие Гаусса", "drop"),
             new(MutationKind.SaltAndPepper, "Соль и Перец", "droplets"), 
-            new(MutationKind.Occlusion, "Закрытая область", "layers")
+            new(MutationKind.Occlusion, "Закрытая область", "layers"),
+            new(MutationKind.JpegCompression, "Сжатие JPEG", "reload")
         ]);
     
     public static FrameLabel Original { get; } = new("Исходник", "Защищён");
@@ -23,6 +24,7 @@ public static class MutationChoices
     public static string Describe(MutationOptions options) => options switch
     {
         GaussianBlurOptions blur => $"σ = {blur.Sigma:N1} px",
+        JpegCompressionOptions jpeg => $"JPEG → PNG • качество {jpeg.Quality}",
         OcclusionOptions area => $"{OcclusionShapes.Single(shape => shape.Id == area.Shape).Name} • {area.Width:N0} × {area.Height:N0}% • {area.Angle:N0}° • {area.Color}",
         SaltAndPepperOptions noise => $"{noise.DensityPercent:N1}% • белых {noise.SaltPercent:N0}% • seed {noise.Seed}",
         _ => throw new ArgumentOutOfRangeException(nameof(options))
