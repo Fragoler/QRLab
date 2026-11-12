@@ -20,7 +20,9 @@ public sealed partial class MutationsViewModel : ScreenViewModel, IDisposable
         [MutationKind.Occlusion] = new OcclusionSettingsViewModel(new()),
         [MutationKind.JpegCompression] = new JpegCompressionSettingsViewModel(new()),
         [MutationKind.Contrast] = new ContrastSettingsViewModel(new()),
-        [MutationKind.Marker] = new MarkerSettingsViewModel(new())
+        [MutationKind.Marker] = new MarkerSettingsViewModel(new()),
+        [MutationKind.Dilation] = new DilationSettingsViewModel(new()),
+        [MutationKind.Erosion] = new ErosionSettingsViewModel(new())
     };
     private SampleViewModel? _sample;
     private int _selectedIndex = -1;

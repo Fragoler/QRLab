@@ -15,6 +15,8 @@ public abstract class MutationSettingsViewModel : ObservableObject
         JpegCompressionOptions jpeg => new JpegCompressionSettingsViewModel(jpeg),
         ContrastOptions contrast => new ContrastSettingsViewModel(contrast),
         MarkerOptions marker => new MarkerSettingsViewModel(marker),
+        DilationOptions dilation => new DilationSettingsViewModel(dilation),
+        ErosionOptions erosion => new ErosionSettingsViewModel(erosion),
         
         _ => throw new ArgumentOutOfRangeException(nameof(options))
     };

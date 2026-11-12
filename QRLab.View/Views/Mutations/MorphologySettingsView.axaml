@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:QRLab.View.ViewModels.Mutations"
+             x:Class="QRLab.View.Views.Mutations.MorphologySettingsView"
+             x:DataType="vm:MorphologySettingsViewModel">
+  <StackPanel Spacing="6">
+    <TextBlock Text="Радиус по X, пикс." Classes="label"/>
+    <NumericUpDown Value="{Binding RadiusX, Mode=TwoWay}" Minimum="0" Maximum="{Binding MaximumRadius}" Increment="1" FormatString="0"/>
+    <Slider Value="{Binding RadiusX, Mode=TwoWay}" Minimum="0" Maximum="{Binding MaximumRadius}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+    <TextBlock Text="Радиус по Y, пикс." Classes="label"/>
+    <NumericUpDown Value="{Binding RadiusY, Mode=TwoWay}" Minimum="0" Maximum="{Binding MaximumRadius}" Increment="1" FormatString="0"/>
+    <Slider Value="{Binding RadiusY, Mode=TwoWay}" Minimum="0" Maximum="{Binding MaximumRadius}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+    <TextBlock Text="Повторения" Classes="label"/>
+    <NumericUpDown Value="{Binding Iterations, Mode=TwoWay}" Minimum="1" Maximum="{Binding MaximumIterations}" Increment="1" FormatString="0"/>
+  </StackPanel>
+</UserControl>

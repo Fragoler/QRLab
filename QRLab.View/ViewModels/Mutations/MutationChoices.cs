@@ -18,7 +18,9 @@ public static class MutationChoices
             new(MutationKind.Occlusion, "Закрытая область", "layers"),
             new(MutationKind.JpegCompression, "Сжатие JPEG", "convert-3d-cube"),
             new(MutationKind.Contrast, "Контраст", "contrast"),
-            new(MutationKind.Marker, "Маркер", "pencil")
+            new(MutationKind.Marker, "Маркер", "pencil"),
+            new(MutationKind.Dilation, "Расширение", "plus"),
+            new(MutationKind.Erosion, "Эрозия", "erase")
         ]);
     
     public static FrameLabel Original { get; } = new("Исходник", "Защищён");
@@ -29,6 +31,7 @@ public static class MutationChoices
         JpegCompressionOptions jpeg => $"JPEG → PNG • качество {jpeg.Quality}",
         ContrastOptions contrast => $"Снижение {contrast.Reduction:N2} • центр {contrast.Center:N2}",
         MarkerOptions marker => $"{marker.Strokes.Count} штр. • {marker.Thickness:N1} px • {marker.Color}",
+        MorphologyOptions morphology => $"Ядро {2 * morphology.RadiusX + 1} × {2 * morphology.RadiusY + 1} px • повторений: {morphology.Iterations}",
         OcclusionOptions area => $"{OcclusionShapes.Single(shape => shape.Id == area.Shape).Name} • {area.Width:N0} × {area.Height:N0}% • {area.Angle:N0}° • {area.Color}",
         SaltAndPepperOptions noise => $"{noise.DensityPercent:N1}% • белых {noise.SaltPercent:N0}% • seed {noise.Seed}",
         _ => throw new ArgumentOutOfRangeException(nameof(options))

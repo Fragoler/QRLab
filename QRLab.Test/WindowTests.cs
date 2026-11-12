@@ -27,6 +27,38 @@ public static class TestAppBuilder
 public sealed class WindowTests
 {
     [AvaloniaFact]
+    public void MorphologySettingsShareViewAndBindIntegerParameters()
+    {
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        vm.Generation.Settings.Mode = GenerationMode.Single;
+        vm.Generation.GenerateCommand.Execute(null);
+        var window = new MainWindow { DataContext = vm };
+        try
+        {
+            window.Show(); vm.NavigateCommand.Execute("02");
+            foreach (var kind in new[] { MutationKind.Dilation, MutationKind.Erosion })
+            {
+                vm.Mutations.AddCommand.Execute(kind);
+                Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+                var view = Assert.Single(window.GetVisualDescendants().OfType<QRLab.View.Views.Mutations.MorphologySettingsView>());
+                var inputs = view.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
+                Assert.Equal(3, inputs.Length);
+                Assert.Equal(50, inputs[0].Maximum);
+                Assert.Equal(10, inputs[2].Maximum);
+                inputs[0].Value = 2; inputs[1].Value = 3; inputs[2].Value = 2;
+                Dispatcher.UIThread.RunJobs();
+                var options = Assert.IsAssignableFrom<MorphologyOptions>(vm.Mutations.SelectedOperation!.Options);
+                Assert.Equal(kind, options.Kind);
+                Assert.Equal(2, options.RadiusX);
+                Assert.Equal(3, options.RadiusY);
+                Assert.Equal(2, options.Iterations);
+                Assert.False(vm.Workspace.HasError);
+            }
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
     public void QrMaskDropdownBindsSelectionShowsPatternTooltipAndHidesForBarcodes()
     {
         using var vm = TestApplicationFactory.CreateMainWindow();

@@ -26,7 +26,9 @@ public sealed class App : Application
                         new OcclusionMutation(),
                         new JpegCompressionMutation(),
                         new ContrastMutation(),
-                        new MarkerMutation()
+                        new MarkerMutation(),
+                        new DilationMutation(),
+                        new ErosionMutation()
                     ],
                     new ZxingCodeRecognizer(), new CsvRecognitionReportExporter())
             };
