@@ -47,8 +47,11 @@ public sealed class QrZonesHelpTests
             Assert.False(ToolTip.GetServiceEnabled(button));
             var help = Assert.Single(overlay.GetVisualDescendants().OfType<QrZonesHelpView>());
             var headings = help.GetVisualDescendants().OfType<TextBlock>().Where(block => block.Classes.Contains("zoneTitle")).ToArray();
-            Assert.Equal(10, headings.Length);
-            Assert.Contains(headings, block => block.Text == "9. Оставшиеся биты");
+            Assert.Equal(new[]
+            {
+                "Поисковые узоры", "Разделители", "Метки времени", "Информация формата",
+                "Информация версии (только версии 7+)", "Выравнивающие узоры", "Фиксированный модуль", "Оставшиеся биты"
+            }, headings.Select(block => block.Text));
             Assert.Contains(help.GetVisualDescendants().OfType<TextBlock>(), block =>
                 block.Inlines?.OfType<Run>().Any(run => run.FontWeight == FontWeight.SemiBold) == true);
             var scroll = overlay.GetVisualDescendants().OfType<ScrollViewer>().Single();

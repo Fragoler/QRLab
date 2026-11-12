@@ -117,7 +117,9 @@ public sealed partial class MutationsViewModel : ScreenViewModel, IDisposable
         if (_sample is null) return;
         TryExecute(() =>
         {
-            _service.Add(_sample.State, _settings[kind].ToOptions());
+            var options = _settings[kind].ToOptions();
+            if (options is MarkerOptions marker) options = marker with { Strokes = [] };
+            _service.Add(_sample.State, options);
             SelectOperation(Operations.Count - 1);
         });
     }

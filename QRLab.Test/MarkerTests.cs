@@ -81,7 +81,11 @@ public sealed class MarkerTests
         await editor.ApplyCommand.ExecuteAsync(null);
         Assert.All(vm.Workspace.Samples, sample => Assert.Single(Assert.IsType<MarkerOptions>(sample.Operations[0].Options).Strokes));
         editor.AddCommand.Execute(MutationKind.Marker);
-        Assert.Empty(Assert.IsType<MarkerOptions>(editor.SelectedOperation!.Options).Strokes);
+        var newMarker = Assert.IsType<MarkerOptions>(editor.SelectedOperation!.Options);
+        Assert.Empty(newMarker.Strokes);
+        Assert.Equal("#123456", newMarker.Color);
+        Assert.Equal(12, newMarker.Thickness);
+        Assert.Single(Assert.IsType<MarkerOptions>(editor.Operations[0].Options).Strokes);
         editor.UndoCommand.Execute(null);
         editor.UndoCommand.Execute(null);
         editor.UndoCommand.Execute(null);
