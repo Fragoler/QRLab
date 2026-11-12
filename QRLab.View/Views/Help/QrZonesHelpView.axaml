@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="QRLab.View.Views.Help.QrZonesHelpView">
+  <UserControl.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="TextWrapping" Value="Wrap"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="LineHeight" Value="22"/>
+    </Style>
+    <Style Selector="TextBlock.zoneTitle">
+      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+  </UserControl.Styles>
+  <StackPanel Spacing="20">
+    <TextBlock>QR-код — это квадратная матрица из модулей. Версия <Run FontWeight="SemiBold">V</Run> имеет размер <Run FontFamily="Consolas">(4·V+17)×(4·V+17)</Run> модулей. Модули делятся на две группы: служебные зоны, расположение которых жёстко задано стандартом ISO/IEC 18004, и область данных с полезной информацией. Служебные зоны нужны, чтобы декодер мог найти символ на изображении, восстановить координатную сетку, узнать параметры кода и, используя их, получить полезную нагрузку</TextBlock>
+    <StackPanel Spacing="6">
+      <TextBlock Classes="zoneTitle" Foreground="#4696E6" Text="Поисковые узоры"/>
+      <TextBlock>Три одинаковых квадрата <Run FontWeight="SemiBold">7×7</Run> в левом верхнем, правом верхнем и левом нижнем углах. Чередование цветов даёт максимальный контраст и практически не встречается в случайных данных, поэтому узор нельзя спутать с содержимым. По трём узорам декодер определяет границы кода, его размер и угол поворота. Расположение не зависит от версии</TextBlock>
+    </StackPanel>
+    <StackPanel Spacing="6">
+      <TextBlock Classes="zoneTitle" Foreground="#82909A" Text="Разделители"/>
+      <TextBlock>Полоса светлых модулей шириной в один модуль вокруг каждого поискового узора с внутренних сторон. Разделитель гарантирует, что рамка узора не слипнется с соседними чёрными модулями данных и декодер уверенно распознает поисковые символы</TextBlock>
+    </StackPanel>
+    <StackPanel Spacing="6">
+      <TextBlock Classes="zoneTitle" Foreground="#F2AA46" Text="Метки времени"/>
+      <TextBlock>Линии чередующихся чёрных и светлых модулей: горизонтальная — по 6-й строке между верхними поисковыми узорами, вертикальная — по 6-му столбцу между левыми узорами. По меткам времени декодер восстанавливает привязку модулей при повороте, перспективе и растяжении печати, а также отличает загрязнения от настоящих данных, также используется для уточнения размеры QR кода</TextBlock>
+    </StackPanel>
+    <StackPanel Spacing="6">
+      <TextBlock Classes="zoneTitle" Foreground="#EBCD46" Text="Информация формата"/>
+      <TextBlock><Run FontWeight="SemiBold">15 бит служебных данных:</Run> 2 бита - уровень коррекции ошибок (L/M/Q/H), 3 бита - номер применённой маски, ещё 10 бит - код самокоррекции BCH, защищающий сами эти биты. Последовательность записана дважды: одна копия — вокруг левого верхнего поискового узора, вторая разделена между правым верхним и левым нижним узорами</TextBlock>
+    </StackPanel>
+    <StackPanel Spacing="6">
+      <TextBlock Classes="zoneTitle" Foreground="#E169AA" Text="Информация версии (только версии 7+)"/>
+      <TextBlock><Run FontWeight="SemiBold">18 бит</Run> — 6 бит номера версии + 12 бит кода BCH, продублированные в двух блоках 6×3 возле правого верхнего и левого нижнего поисковых узоров. Нужна, чтобы декодер мог отличить крупные версии друг от друга.</TextBlock>
+    </StackPanel>
+    <StackPanel Spacing="6">
+      <TextBlock Classes="zoneTitle" Foreground="#AE6FE0" Text="Выравнивающие узоры"/>
+      <TextBlock>Уменьшенная копия поискового узора <Run FontWeight="SemiBold">5×5:</Run>. Появляются начиная с версии 2. Служат дополнительными опорными точками: по ним декодер компенсирует нелинейные искажения — растяжение бумаги, изгиб при сканировании, перспективу камеры.</TextBlock>
+    </StackPanel>
+    <StackPanel Spacing="6">
+      <TextBlock Classes="zoneTitle" Foreground="#DC5050" Text="Фиксированный модуль"/>
+      <TextBlock>Единственный неизменяемый модуль: он <Run FontWeight="SemiBold">всегда чёрный</Run> и не зависит ни от данных, ни от маски. Расположен в строке <Run FontFamily="Consolas">4·V+9</Run> столбца 8 — у левого нижнего узора. Служит контрольной точкой</TextBlock>
+    </StackPanel>
+    <StackPanel Spacing="6">
+      <TextBlock Classes="zoneTitle" Text="Оставшиеся биты"/>
+      <TextBlock>Если после размещения всех кодовых слов в области данных остались свободные позиции, они заполняются нулевыми битами и маскируются вместе с данными. В версиях 2–6 таких позиций <Run FontWeight="SemiBold">ровно 7.</Run> Полезной информации они не несут, но являются частью символа и учитываются при анализе повреждений.</TextBlock>
+    </StackPanel>
+  </StackPanel>
+</UserControl>

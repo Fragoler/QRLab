@@ -39,6 +39,9 @@ public sealed partial class ComparisonViewModel : ScreenViewModel, IDisposable
     [ObservableProperty] private bool _highlightCodewords;
     [ObservableProperty] private bool _highlightBlocks;
     [ObservableProperty] private bool _showResultCode = true;
+    [ObservableProperty] private bool _isQrHelpOpen;
+    [RelayCommand] private void OpenQrHelp() { if (IsQr) IsQrHelpOpen = true; }
+    [RelayCommand] private void CloseQrHelp() => IsQrHelpOpen = false;
     partial void OnHighlightCodewordsChanged(bool value)
     {
         if (value) HighlightBlocks = false;
@@ -82,6 +85,7 @@ public sealed partial class ComparisonViewModel : ScreenViewModel, IDisposable
 
     private void Refresh()
     {
+        if (!IsQr) IsQrHelpOpen = false;
         foreach (var name in new[] { nameof(OriginalBitmap), nameof(FinalBitmap), nameof(HasBitmaps), nameof(HasOriginalBitmap), nameof(HasFinalBitmap),
                      nameof(OriginalDimensions), nameof(FinalDimensions), nameof(FinalPlaceholder), nameof(CanCompare), nameof(Comparison),
                      nameof(Inspection), nameof(Layout), nameof(IsQr), nameof(HasBlocks), nameof(HasInspection), nameof(Sections) })

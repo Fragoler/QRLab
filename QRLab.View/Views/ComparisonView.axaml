@@ -5,13 +5,14 @@
              xmlns:icons="using:QRLab.View.Controls"
              xmlns:recognition="clr-namespace:QRLab.Core.Models.Recognition;assembly=QRLab.Core"
              xmlns:converters="using:QRLab.View.Converters"
+             xmlns:help="using:QRLab.View.Views.Help"
              x:Class="QRLab.View.Views.ComparisonView"
              x:DataType="vm:ComparisonViewModel">
   <UserControl.Resources>
     <converters:RecognitionStatusBrushConverter x:Key="RecognitionStatusBrush"/>
   </UserControl.Resources>
   <Grid Margin="18" RowDefinitions="Auto,*" RowSpacing="16">
-    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16" IsEnabled="{Binding !IsQrHelpOpen}">
       <StackPanel Spacing="4">
         <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold"/>
       </StackPanel>
@@ -25,7 +26,7 @@
         </Button>
       </StackPanel>
     </Grid>
-    <Grid Grid.Row="1" ColumnDefinitions="*,340" ColumnSpacing="12">
+    <Grid Grid.Row="1" ColumnDefinitions="*,340" ColumnSpacing="12" IsEnabled="{Binding !IsQrHelpOpen}">
       <Grid RowDefinitions="*,Auto,Auto" RowSpacing="12">
         <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
           <Border Classes="card">
@@ -108,8 +109,19 @@
               <StackPanel Grid.Column="1" Spacing="10">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                   <CheckBox Content="Зоны QR" IsChecked="{Binding HighlightZones}" IsEnabled="{Binding IsQr}"/>
-                  <Button Grid.Column="1" Name="QrLegendButton" Classes="flat" Padding="5" IsEnabled="{Binding IsQr}" ToolTip.Tip="Легенда зон QR" AutomationProperties.Name="Легенда зон QR">
-                    <c:SvgIcon Source="info" Width="16" Height="16"/>
+                  <c:HoldButton Grid.Column="1" Name="QrLegendButton" Classes="flat" Padding="0" IsEnabled="{Binding IsQr}"
+                                HoldCommand="{Binding OpenQrHelpCommand}"
+                                ToolTip.ServiceEnabled="{Binding !IsQrHelpOpen}"
+                                ToolTip.Tip="Нажмите — легенда зон QR. Удерживайте — подробное объяснение." AutomationProperties.Name="Легенда зон QR">
+                    <Grid Width="26" Height="26" ClipToBounds="True">
+                      <Border Name="QrLegendHoldFill" Background="#75D9BE" Opacity="0.55" CornerRadius="3"
+                              RenderTransformOrigin="50%,100%" IsHitTestVisible="False">
+                        <Border.RenderTransform>
+                          <ScaleTransform ScaleY="{Binding #QrLegendButton.HoldProgress}"/>
+                        </Border.RenderTransform>
+                      </Border>
+                      <c:SvgIcon Source="info" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                    </Grid>
                     <Button.Flyout>
                       <Flyout Placement="LeftEdgeAlignedTop">
                         <StackPanel Spacing="8" Margin="4">
@@ -121,11 +133,10 @@
                           <TextBlock Text="Информация версии (v7+)" Foreground="#E169AA"/>
                           <TextBlock Text="Фиксированный модуль" Foreground="#DC5050"/>
                           <TextBlock Text="Разделители" Foreground="#82909A"/>
-                          <TextBlock Text="Кодовые слова" Foreground="#64C3D7"/>
                         </StackPanel>
                       </Flyout>
                     </Button.Flyout>
-                  </Button>
+                  </c:HoldButton>
                 </Grid>
                 <CheckBox Name="HighlightCodewordsCheckBox" Content="Кодовые слова" IsChecked="{Binding HighlightCodewords}"/>
                 <CheckBox Name="HighlightBlocksCheckBox" Content="Блоки коррекции" IsChecked="{Binding HighlightBlocks}" IsEnabled="{Binding HasBlocks}" ToolTip.Tip="Каждый блок имеет свой цвет с тёмным и светлым оттенками модулей. Отключает подсветку кодовых слов."/>
@@ -166,5 +177,28 @@
           </Grid>
         </Border>
     </Grid>
+    <Border Grid.RowSpan="2" Name="QrZonesHelpOverlay" Background="#DD0B1011" IsVisible="{Binding IsQrHelpOpen}"
+            PointerPressed="DismissQrHelpOnBackground" AutomationProperties.Name="Описание зон QR-кода">
+      <Border Classes="card" MaxWidth="960" MaxHeight="780" Margin="24" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+              KeyboardNavigation.TabNavigation="Cycle">
+        <Grid RowDefinitions="Auto,*,Auto">
+          <Border Classes="panelHead" Padding="22,16">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+              <TextBlock Text="Зоны QR-кода" FontSize="22" FontWeight="SemiBold"/>
+              <Button Grid.Column="1" Name="CloseQrHelpButton" Command="{Binding CloseQrHelpCommand}" Classes="flat"
+                      ToolTip.Tip="Закрыть (Esc)" AutomationProperties.Name="Закрыть объяснение зон QR">
+                <c:SvgIcon Source="cross-in-circle" Width="18" Height="18"/>
+              </Button>
+            </Grid>
+          </Border>
+          <ScrollViewer Grid.Row="1" Name="QrZonesHelpScroll" Padding="24,18,28,24" HorizontalScrollBarVisibility="Disabled">
+            <help:QrZonesHelpView/>
+          </ScrollViewer>
+          <Border Grid.Row="2" Padding="22,12" BorderBrush="#303839" BorderThickness="0,1,0,0">
+            <TextBlock Text="Esc — закрыть" Classes="muted"/>
+          </Border>
+        </Grid>
+      </Border>
+    </Border>
   </Grid>
 </UserControl>
