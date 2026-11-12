@@ -85,22 +85,29 @@
               </StackPanel>
               <StackPanel IsVisible="{Binding Settings.IsBarcode}" Spacing="5">
                 <TextBlock Text="Тип штрихкода" Classes="label"/>
-                <ComboBox ItemsSource="{Binding Settings.Barcode.Types}" SelectedValue="{Binding Settings.Barcode.Type, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
-                <TextBlock IsVisible="{Binding Settings.Barcode.IsEan13}" Text="EAN-13: 12 цифр (контрольная добавится) или 13 с верной контрольной суммой." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
+                <ComboBox ItemsSource="{Binding Settings.Barcode.Types}" 
+                          SelectedValue="{Binding Settings.Barcode.Type, Mode=TwoWay}" 
+                          SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" 
+                          ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
               </StackPanel>
               <TextBlock Text="Источник содержимого" Classes="label"/>
               <ComboBox ItemsSource="{Binding Settings.Sources}" SelectedValue="{Binding Settings.Source, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
               <StackPanel IsVisible="{Binding Settings.IsText}" Spacing="5">
-                <TextBlock Text="Содержимое / шаблон" Classes="label"/>
-                <TextBox Text="{Binding Settings.Template, Mode=TwoWay}" AcceptsReturn="True" Height="62" TextWrapping="Wrap"/>
-                <TextBlock Text="{}{num} — порядковый номер образца" Classes="muted" FontSize="10"/>
+                <TextBlock Text="Содержимое" Classes="label"/>
+                <TextBox Text="{Binding Settings.Template, Mode=TwoWay}" 
+                         AcceptsReturn="True" Height="62" TextWrapping="Wrap"
+                         ToolTip.Tip="{}{num} — порядковый номер образца вида заполнемый слева нулями до 4х символов"/>
               </StackPanel>
               <StackPanel IsVisible="{Binding Settings.IsRandom}" Spacing="5">
                 <TextBlock Text="Длина случайной строки" Classes="label"/>
-                <NumericUpDown Value="{Binding Settings.RandomLength, Mode=TwoWay}" Minimum="{Binding Settings.Limits.ContentLength.Minimum}" Maximum="{Binding Settings.Limits.ContentLength.Maximum}" FormatString="0"/>
-                <TextBlock Text="Новая строка для каждого образца: a–z, 0–9. Для EAN-13 — 12 или 13 цифр с контрольной суммой." Classes="muted" FontSize="10" TextWrapping="Wrap"/>
+                <NumericUpDown Value="{Binding Settings.RandomLength, Mode=TwoWay}" 
+                               Minimum="{Binding Settings.Limits.ContentLength.Minimum}" 
+                               Maximum="{Binding Settings.Limits.ContentLength.Maximum}" 
+                               FormatString="0"
+                               ToolTip.Tip="Случайная строка для каждого образца: a–z, 0–9. Для EAN-13 — 12 или 13 цифр с контрольной суммой"/>
               </StackPanel>
-              <TextBlock Text="{Binding Settings.ContentUsage}"/>
+              <TextBlock Text="{Binding Settings.ContentUsage}"
+                         HorizontalAlignment="Right"/>
               <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding Settings.IsBatch}">
                 <StackPanel>
                   <TextBlock Text="Первый номер" Classes="label"/>
