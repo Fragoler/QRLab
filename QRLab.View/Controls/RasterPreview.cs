@@ -10,9 +10,9 @@ using QRLab.Core.Models.Images;
 namespace QRLab.View.Controls;
 
 /// <summary>
-/// Decodes existing PNG data for display; navigation never changes the image.
+/// Decodes existing PNG data for display
 /// </summary>
-public sealed class RasterPreview : Control
+public class RasterPreview : Control
 {
     private const double DefaultZoom = 1;
     
@@ -22,9 +22,11 @@ public sealed class RasterPreview : Control
     public RasterImage? Image { get => GetValue(ImageProperty); set => SetValue(ImageProperty, value); }
     
     public bool AllowZoom { get => GetValue(AllowZoomProperty); set => SetValue(AllowZoomProperty, value); }
+    public Rect ImageBounds => Image is { } image ? Destination(image) : default;
     public ICommand ResetViewCommand { get; }
     public double Zoom => _zoom;
     public Vector PanOffset => _pan;
+    
     private Bitmap? _displayImage;
     private Point? _dragStart;
     private Vector _pan;
@@ -78,6 +80,7 @@ public sealed class RasterPreview : Control
     public override void Render(DrawingContext context)
     {
         base.Render(context);
+        context.FillRectangle(Brushes.Transparent, new Rect(Bounds.Size));
         if (!_attached || Image is not { } image || Bounds.Width <= 0 || Bounds.Height <= 0) return;
         var destination = Destination(image);
         var width = Math.Clamp((int)Math.Ceiling(destination.Width * 2), 1, image.Width);
@@ -93,18 +96,24 @@ public sealed class RasterPreview : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+
+        if (e.Handled)
+            return;
+        
         if (!AllowZoom || Image is null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
         _dragStart = e.GetPosition(this); e.Pointer.Capture(this); e.Handled = true;
     }
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
+        if (e.Handled) return;
         if (_dragStart is not { } previous) return;
         var position = e.GetPosition(this); _pan += position - previous; _dragStart = position; InvalidateVisual();
     }
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        if (e.Handled) return;
         if (_dragStart is null) return;
         _dragStart = null; e.Pointer.Capture(null); e.Handled = true;
     }

@@ -14,6 +14,7 @@ public abstract class MutationSettingsViewModel : ObservableObject
         OcclusionOptions area => new OcclusionSettingsViewModel(area),
         JpegCompressionOptions jpeg => new JpegCompressionSettingsViewModel(jpeg),
         ContrastOptions contrast => new ContrastSettingsViewModel(contrast),
+        MarkerOptions marker => new MarkerSettingsViewModel(marker),
         
         _ => throw new ArgumentOutOfRangeException(nameof(options))
     };

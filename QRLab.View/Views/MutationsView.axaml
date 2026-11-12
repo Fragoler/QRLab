@@ -22,7 +22,7 @@
     <Grid Grid.Row="1" ColumnDefinitions="230,*,260" ColumnSpacing="12">
       <Border Classes="card">
         <StackPanel>
-          <Border Classes="panelHead"><TextBlock Text="Алгоритмические искажения" Classes="heading"/></Border>
+          <Border Classes="panelHead"><TextBlock Text="Искажения" Classes="heading"/></Border>
           <StackPanel Margin="14" Spacing="12">
             <ItemsControl ItemsSource="{Binding AvailableMutations}">
               <ItemsControl.ItemTemplate>
@@ -44,10 +44,10 @@
         <Border Classes="card">
           <Grid RowDefinitions="*,40,52">
             <Border Grid.Row="0" Background="#0D1112" Padding="30">
-              <c:RasterPreview x:Name="MutationPreview" Image="{Binding PreviewImage}" AllowZoom="True"/>
+              <c:MutationCanvas x:Name="MutationPreview" Image="{Binding PreviewImage}" Settings="{Binding SelectedSettings}" AllowZoom="True"/>
             </Border>
             <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="14,0">
-              <TextBlock Text="ЛКМ — перемещение  •  Колесо — масштаб" Classes="muted" FontSize="10"/>
+              <TextBlock Text="ЛКМ  •  Колесо — масштаб" Classes="muted" FontSize="10" TextWrapping="Wrap"/>
               <Button x:Name="ResetMutationViewport" Grid.Column="1" Content="Сбросить вид" Classes="flat" Command="{Binding #MutationPreview.ResetViewCommand}"/>
             </Grid>
             <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto" Margin="14,0">

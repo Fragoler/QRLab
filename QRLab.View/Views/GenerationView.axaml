@@ -193,7 +193,7 @@
               <c:RasterPreview x:Name="GenerationPreview" Image="{Binding Workspace.SelectedSample.OriginalImage}" AllowZoom="True"/>
             </Border>
             <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="14,0">
-              <TextBlock Text="ЛКМ — перемещение  •  Колесо — масштаб" Classes="muted" FontSize="10"/>
+              <TextBlock Text="ЛКМ  •  Колесо — масштаб" Classes="muted" FontSize="10"/>
               <Button x:Name="ResetGenerationViewport" Grid.Column="1" Content="Сбросить вид" Classes="flat" Command="{Binding #GenerationPreview.ResetViewCommand}"/>
             </Grid>
           </Grid>
