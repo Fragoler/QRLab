@@ -7,8 +7,12 @@
   <StackPanel Spacing="8">
     <local:NumericMutationParameter Label="Плотность шума, %" Value="{Binding DensityPercent, Mode=TwoWay}" Minimum="0" Maximum="100"/>
     <local:NumericMutationParameter Label="Доля белых точек, %" Value="{Binding SaltPercent, Mode=TwoWay}" Minimum="0" Maximum="100"/>
-    <TextBlock Text="Seed" Classes="label"/>
+    
+    <Border Classes="divider"/>
+    
+    <TextBlock Text="Семя" Classes="label"/>
     <NumericUpDown Value="{Binding Seed, Mode=TwoWay}" Minimum="0" Maximum="2147483647" FormatString="0"/>
-    <Button Content="Новый seed" Command="{Binding RandomizeCommand}"/>
+    <CheckBox Content="Случайный для каждого" IsChecked="{Binding RandomForEachSample, Mode=TwoWay}"
+              ToolTip.Tip="Семя = базовое семя + номер образца в пакете"/>
   </StackPanel>
 </UserControl>

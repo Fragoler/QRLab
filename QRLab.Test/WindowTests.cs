@@ -27,6 +27,45 @@ public static class TestAppBuilder
 public sealed class WindowTests
 {
     [AvaloniaFact]
+    public void RandomPerSampleCheckboxReplacesSeedButtonForBothRandomMutations()
+    {
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        vm.Generation.Settings.Mode = GenerationMode.Single;
+        vm.Generation.GenerateCommand.Execute(null);
+        var window = new MainWindow { DataContext = vm };
+        try
+        {
+            window.Show(); vm.NavigateCommand.Execute("02");
+            foreach (var kind in new[] { MutationKind.SaltAndPepper, MutationKind.PrintDefects })
+            {
+                vm.Mutations.AddCommand.Execute(kind);
+                Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+                var check = Assert.Single(window.GetVisualDescendants().OfType<CheckBox>(), c => Equals(c.Content, "Случайный для каждого"));
+                Assert.False(check.IsChecked);
+                Assert.DoesNotContain(window.GetVisualDescendants().OfType<Button>(), button => Equals(button.Content, "Новый seed"));
+                check.IsChecked = true;
+                Dispatcher.UIThread.RunJobs();
+                var options = vm.Mutations.SelectedOperation!.Options;
+                if (options is SaltAndPepperOptions noise)
+                {
+                    Assert.True(noise.RandomForEachSample); Assert.Equal(42, noise.Seed);
+                }
+                else
+                {
+                    var defects = Assert.IsType<PrintDefectsOptions>(options);
+                    Assert.True(defects.RandomForEachSample); Assert.Equal(42, defects.Seed);
+                }
+                var image = vm.Mutations.PreviewImage;
+                check.IsChecked = false;
+                Dispatcher.UIThread.RunJobs();
+                Assert.NotSame(image, vm.Mutations.PreviewImage);
+                Assert.False(vm.Workspace.HasError);
+            }
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
     public void PrintDefectSettingsBindCountDiameterDistributionAndSeed()
     {
         using var vm = TestApplicationFactory.CreateMainWindow();

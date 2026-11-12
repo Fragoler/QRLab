@@ -10,7 +10,10 @@ public sealed class MutationService(SampleWorkspace workspace, IEnumerable<IImag
     private readonly IReadOnlyDictionary<MutationKind, IImageMutation> _mutations = mutations.ToDictionary(mutation => mutation.Kind);
     private long _batch;
 
-    public IReadOnlyList<MutationFrame> Apply(RasterImage original, IReadOnlyList<MutationOptions> operations)
+    public IReadOnlyList<MutationFrame> Apply(RasterImage original, IReadOnlyList<MutationOptions> operations) =>
+        Apply(original, operations, 0);
+
+    public IReadOnlyList<MutationFrame> Apply(RasterImage original, IReadOnlyList<MutationOptions> operations, int sampleNumber)
     {
         var frames = new List<MutationFrame>(operations.Count);
         var image = original;
@@ -18,7 +21,8 @@ public sealed class MutationService(SampleWorkspace workspace, IEnumerable<IImag
         {
             if (!_mutations.TryGetValue(options.Kind, out var mutation))
                 throw new ArgumentException("Реализация мутации не зарегистрирована.");
-            image = mutation.Apply(image, options);
+            image = mutation.Apply(image, options.ForSample(sampleNumber));
+            // Store base options so editing or reapplying never adds the sample number twice.
             frames.Add(new(options, image));
         }
         return frames;
@@ -26,7 +30,7 @@ public sealed class MutationService(SampleWorkspace workspace, IEnumerable<IImag
 
     public void Add(SampleState sample, MutationOptions options)
     {
-        var frame = Apply(sample.Image, [options]).Single();
+        var frame = Apply(sample.Image, [options], sample.Preview.Number).Single();
         sample.Mutations.Replace(sample.Mutations.Frames.Append(frame).ToArray());
     }
 
@@ -34,7 +38,7 @@ public sealed class MutationService(SampleWorkspace workspace, IEnumerable<IImag
     {
         var chain = sample.Mutations.Frames.Select(frame => frame.Options).ToArray();
         chain[index] = options;
-        var frames = Apply(sample.Preview.Image, chain);
+        var frames = Apply(sample.Preview.Image, chain, sample.Preview.Number);
         sample.Mutations.Replace(frames);
     }
 
@@ -44,9 +48,9 @@ public sealed class MutationService(SampleWorkspace workspace, IEnumerable<IImag
         var sourceRevision = source.Mutations.Revision;
         var chain = source.Mutations.Frames.Select(frame => frame.Options).ToArray();
         var targets = workspace.Samples.Where(sample => sample != source)
-            .Select(sample => (Sample: sample, Revision: sample.Mutations.Revision, Original: sample.Preview.Image)).ToArray();
+            .Select(sample => (Sample: sample, Revision: sample.Mutations.Revision, Original: sample.Preview.Image, Number: sample.Preview.Number)).ToArray();
         var results = await Task.Run(() => targets.Select(target =>
-            (target.Sample, target.Revision, Frames: Apply(target.Original, chain))).ToArray());
+            (target.Sample, target.Revision, Frames: Apply(target.Original, chain, target.Number))).ToArray());
         if (batch != Volatile.Read(ref _batch) || !workspace.Samples.Contains(source)
             || source.Mutations.Revision != sourceRevision) return 0;
         var applied = 0;

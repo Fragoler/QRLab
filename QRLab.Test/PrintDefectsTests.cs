@@ -154,9 +154,10 @@ public sealed class PrintDefectsTests
             Assert.Equal(samples[0].Frames[0].Image.Data.ToArray(), loaded.Samples[0].Frames[0].Image.Data.ToArray());
             editor.UndoCommand.Execute(null); editor.UndoCommand.Execute(null); editor.RedoCommand.Execute(null);
             Assert.Equal(options, editor.SelectedSettings!.ToOptions());
-            var previous = Assert.IsType<PrintDefectsSettingsViewModel>(editor.SelectedSettings).Seed;
-            Assert.IsType<PrintDefectsSettingsViewModel>(editor.SelectedSettings).RandomizeCommand.Execute(null);
-            Assert.NotEqual(previous, Assert.IsType<PrintDefectsOptions>(editor.SelectedOperation!.Options).Seed);
+            Assert.IsType<PrintDefectsSettingsViewModel>(editor.SelectedSettings).RandomForEachSample = true;
+            var perSample = Assert.IsType<PrintDefectsOptions>(editor.SelectedOperation!.Options);
+            Assert.True(perSample.RandomForEachSample);
+            Assert.Equal(123, perSample.Seed);
         }
         finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
     }

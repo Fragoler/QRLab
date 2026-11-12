@@ -6,6 +6,11 @@ public sealed record SaltAndPepperOptions : MutationOptions
     public double DensityPercent { get; init; } = MutationDefaults.NoisePercent;
     public double SaltPercent { get; init; } = MutationDefaults.SaltPercent;
     public int Seed { get; init; } = MutationDefaults.Seed;
+    public bool RandomForEachSample { get; init; }
+
+    public override MutationOptions ForSample(int sampleNumber) => RandomForEachSample
+        ? this with { Seed = unchecked(Seed + sampleNumber), RandomForEachSample = false }
+        : this;
 
     public override void Validate()
     {

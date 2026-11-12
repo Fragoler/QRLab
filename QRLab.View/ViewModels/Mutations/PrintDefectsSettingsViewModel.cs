@@ -1,5 +1,4 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using QRLab.Core.Models.Mutations;
 using QRLab.View.ViewModels.Common;
 
@@ -12,6 +11,7 @@ public sealed partial class PrintDefectsSettingsViewModel(PrintDefectsOptions op
     [ObservableProperty] private PrintDefectSizeDistribution _distribution = options.Distribution;
     [ObservableProperty] private double _sizeVariationPercent = options.SizeVariationPercent;
     [ObservableProperty] private decimal? _seed = options.Seed;
+    [ObservableProperty] private bool _randomForEachSample = options.RandomForEachSample;
     public int MaximumCount => PrintDefectsOptions.MaximumCount;
     public IReadOnlyList<EnumOption<PrintDefectSizeDistribution>> Distributions => MutationChoices.PrintDefectDistributions;
     public override MutationOptions ToOptions()
@@ -20,8 +20,7 @@ public sealed partial class PrintDefectsSettingsViewModel(PrintDefectsOptions op
         return new PrintDefectsOptions
         {
             Count = Count, Diameter = Diameter, Distribution = Distribution, SizeVariationPercent = SizeVariationPercent,
-            Seed = checked((int)Seed.Value)
+            Seed = checked((int)Seed.Value), RandomForEachSample = RandomForEachSample
         };
     }
-    [RelayCommand] private void Randomize() => Seed = Seed >= int.MaxValue ? 0 : (Seed ?? MutationDefaults.Seed) + 1;
 }

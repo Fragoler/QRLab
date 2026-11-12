@@ -12,6 +12,11 @@ public sealed record PrintDefectsOptions : MutationOptions
     public PrintDefectSizeDistribution Distribution { get; init; } = PrintDefectSizeDistribution.Uniform;
     public double SizeVariationPercent { get; init; } = 50;
     public int Seed { get; init; } = MutationDefaults.Seed;
+    public bool RandomForEachSample { get; init; }
+
+    public override MutationOptions ForSample(int sampleNumber) => RandomForEachSample
+        ? this with { Seed = unchecked(Seed + sampleNumber), RandomForEachSample = false }
+        : this;
 
     public override void Validate()
     {

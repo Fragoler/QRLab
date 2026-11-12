@@ -41,11 +41,14 @@ public static class MutationChoices
         ContrastOptions contrast => $"Снижение {contrast.Reduction:N2} • центр {contrast.Center:N2}",
         MarkerOptions marker => $"{marker.Strokes.Count} штр. • {marker.Thickness:N1} px • {marker.Color}",
         MorphologyOptions morphology => $"Ядро {2 * morphology.RadiusX + 1} × {2 * morphology.RadiusY + 1} px • повторений: {morphology.Iterations}",
-        PrintDefectsOptions defects => $"{defects.Count} шт. • Ø {defects.Diameter:N1} px • {PrintDefectDistributions.Single(d => d.Id == defects.Distribution).Name} • разброс ±{defects.SizeVariationPercent:N0}% • seed {defects.Seed}",
+        PrintDefectsOptions defects => $"{defects.Count} шт. • Ø {defects.Diameter:N1} px • {PrintDefectDistributions.Single(d => d.Id == defects.Distribution).Name} • разброс ±{defects.SizeVariationPercent:N0}% • {DescribeSeed(defects.Seed, defects.RandomForEachSample)}",
         OcclusionOptions area => $"{OcclusionShapes.Single(shape => shape.Id == area.Shape).Name} • {area.Width:N0} × {area.Height:N0}% • {area.Angle:N0}° • {area.Color}",
-        SaltAndPepperOptions noise => $"{noise.DensityPercent:N1}% • белых {noise.SaltPercent:N0}% • seed {noise.Seed}",
+        SaltAndPepperOptions noise => $"{noise.DensityPercent:N1}% • белых {noise.SaltPercent:N0}% • {DescribeSeed(noise.Seed, noise.RandomForEachSample)}",
         _ => throw new ArgumentOutOfRangeException(nameof(options))
     };
+
+    private static string DescribeSeed(int seed, bool randomForEachSample) =>
+        randomForEachSample ? $"seed {seed} + № образца" : $"seed {seed}";
 }
 
 public sealed record FrameLabel(string Name, string Description);

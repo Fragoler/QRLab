@@ -16,4 +16,6 @@ public abstract record MutationOptions
 {
     [JsonIgnore] public abstract MutationKind Kind { get; }
     public abstract void Validate();
+    /// <summary>Resolves execution parameters without modifying the options stored in the chain.</summary>
+    public virtual MutationOptions ForSample(int sampleNumber) => this;
 }
