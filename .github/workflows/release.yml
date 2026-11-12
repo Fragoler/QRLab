@@ -99,9 +99,6 @@ jobs:
           fi
           mkdir -p artifacts/release
           filename="QRLab-$TAG-$RID$extension"
-          if [[ "$RID" == win-* ]]; then
-            filename="QRLab.exe"
-          fi
           mv "$executable" "artifacts/release/$filename"
   
       - uses: actions/upload-artifact@v4
