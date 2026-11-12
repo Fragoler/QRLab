@@ -190,7 +190,7 @@
         <Border Classes="card" ClipToBounds="True">
           <Grid RowDefinitions="*,40">
             <Border Grid.Row="0" Background="#0D1112" Padding="30">
-              <c:RasterPreview x:Name="GenerationPreview" Image="{Binding Workspace.SelectedSample.Image}" AllowZoom="True"/>
+              <c:RasterPreview x:Name="GenerationPreview" Image="{Binding Workspace.SelectedSample.OriginalImage}" AllowZoom="True"/>
             </Border>
             <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="14,0">
               <TextBlock Text="ЛКМ — перемещение  •  Колесо — масштаб" Classes="muted" FontSize="10"/>
@@ -228,7 +228,7 @@
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="samples:SampleViewModel">
                 <Grid ColumnDefinitions="34,*,Auto" ColumnSpacing="10">
-                  <c:RasterPreview Image="{Binding Image}" Width="32" Height="32"/>
+                  <c:RasterPreview Image="{Binding OriginalImage}" Width="32" Height="32"/>
                   <StackPanel Spacing="3" Grid.Column="1">
                     <TextBlock Text="{Binding Name}" Classes="mono" FontSize="11"/>
                     <TextBlock Text="{Binding Content}" Classes="muted" FontSize="10"/>
