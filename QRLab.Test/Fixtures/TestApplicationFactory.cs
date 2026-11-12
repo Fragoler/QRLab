@@ -13,7 +13,7 @@ namespace QRLab.Test.Fixtures;
 internal static class TestApplicationFactory
 {
     public static SampleSetStorage CreateStorage() => new();
-    public static IImageMutation[] CreateImageMutations() => [new GaussianBlurMutation(), new SaltAndPepperMutation(), new OcclusionMutation(), new JpegCompressionMutation()];
+    public static IImageMutation[] CreateImageMutations() => [new GaussianBlurMutation(), new SaltAndPepperMutation(), new OcclusionMutation(), new JpegCompressionMutation(), new ContrastMutation()];
     public static MutationService CreateMutations() => new(new SampleWorkspace(), CreateImageMutations());
     public static MainWindowViewModel CreateMainWindow() => ApplicationViewModels.Create(new CodeGenerator(), CreateStorage(), CreateImageMutations(), new ZxingCodeRecognizer(), new CsvRecognitionReportExporter());
 }

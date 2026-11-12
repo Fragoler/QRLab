@@ -13,6 +13,8 @@ public abstract class MutationSettingsViewModel : ObservableObject
         SaltAndPepperOptions noise => new SaltAndPepperSettingsViewModel(noise),
         OcclusionOptions area => new OcclusionSettingsViewModel(area),
         JpegCompressionOptions jpeg => new JpegCompressionSettingsViewModel(jpeg),
+        ContrastOptions contrast => new ContrastSettingsViewModel(contrast),
+        
         _ => throw new ArgumentOutOfRangeException(nameof(options))
     };
 }

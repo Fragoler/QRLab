@@ -6,6 +6,7 @@
              x:Class="QRLab.View.Views.Mutations.MutationSettingsView"
              x:DataType="vm:MutationsViewModel">
   <UserControl.DataTemplates>
+    <DataTemplate DataType="{x:Type settings:ContrastSettingsViewModel}"><local:ContrastSettingsView/></DataTemplate>
     <DataTemplate DataType="{x:Type settings:JpegCompressionSettingsViewModel}"><local:JpegCompressionSettingsView/></DataTemplate>
     <DataTemplate DataType="{x:Type settings:GaussianBlurSettingsViewModel}"><local:GaussianBlurSettingsView/></DataTemplate>
     <DataTemplate DataType="{x:Type settings:SaltAndPepperSettingsViewModel}"><local:SaltAndPepperSettingsView/></DataTemplate>

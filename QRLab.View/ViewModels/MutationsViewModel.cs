@@ -18,7 +18,8 @@ public sealed partial class MutationsViewModel : ScreenViewModel, IDisposable
         [MutationKind.GaussianBlur] = new GaussianBlurSettingsViewModel(new()),
         [MutationKind.SaltAndPepper] = new SaltAndPepperSettingsViewModel(new()),
         [MutationKind.Occlusion] = new OcclusionSettingsViewModel(new()),
-        [MutationKind.JpegCompression] = new JpegCompressionSettingsViewModel(new())
+        [MutationKind.JpegCompression] = new JpegCompressionSettingsViewModel(new()),
+        [MutationKind.Contrast] = new ContrastSettingsViewModel(new())
     };
     private SampleViewModel? _sample;
     private int _selectedIndex = -1;

@@ -9,4 +9,6 @@ public static class MutationDefaults
     public const double SaltPercent = 50;
     public const int Seed = 42;
     public const int JpegQuality = 75;
+    public const double ContrastReduction = 0.5;
+    public const double ContrastCenter = 0.5;
 }

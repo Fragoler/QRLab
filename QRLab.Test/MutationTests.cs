@@ -10,6 +10,88 @@ namespace QRLab.Test;
 public sealed class MutationTests
 {
     [Theory]
+    [InlineData(0, 0.25, 0, 255)]
+    [InlineData(0.5, 0.5, 64, 191)]
+    [InlineData(0.5, 0.2, 26, 153)]
+    [InlineData(0.25, 0.8, 51, 242)]
+    [InlineData(1, 0.5, 128, 128)]
+    [InlineData(1, 0, 0, 0)]
+    [InlineData(1, 1, 255, 255)]
+    public void ContrastLinearlyMovesBlackAndWhiteTowardCenter(double reduction, double center, byte black, byte white)
+    {
+        var source = Image(32, canvas =>
+        {
+            canvas.Clear(SKColors.White);
+            using var paint = new SKPaint { Color = SKColors.Black };
+            canvas.DrawRect(0, 0, 16, 32, paint);
+        });
+        var before = source.Data.ToArray();
+        var result = new ContrastMutation().Apply(source, new ContrastOptions { Reduction = reduction, Center = center });
+        using var pixels = Decode(result);
+        Assert.Equal(new SKColor(black, black, black), pixels.GetPixel(0, 0));
+        Assert.Equal(new SKColor(white, white, white), pixels.GetPixel(31, 31));
+        Assert.Equal(source.Width, result.Width);
+        Assert.Equal(source.Height, result.Height);
+        Assert.Equal(before, source.Data.ToArray());
+        if (reduction == 0) Assert.Same(source, result);
+    }
+
+    [Fact]
+    public void ContrastTransformsIntermediateColorChannelsLinearly()
+    {
+        var source = Image(32, canvas => canvas.Clear(new SKColor(20, 100, 220)));
+        using var pixels = Decode(new ContrastMutation().Apply(source, new ContrastOptions { Reduction = 0.5, Center = 0.4 }));
+        Assert.All(pixels.Pixels, pixel => Assert.Equal(new SKColor(61, 101, 161), pixel));
+    }
+
+    [Theory]
+    [InlineData(-0.01)]
+    [InlineData(1.01)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public void ContrastRejectsInvalidReductionAndCenter(double value)
+    {
+        var mutation = new ContrastMutation();
+        var source = Image(32, canvas => canvas.Clear(SKColors.White));
+        Assert.Throws<ArgumentException>(() => mutation.Apply(source, new ContrastOptions { Reduction = value }));
+        Assert.Throws<ArgumentException>(() => mutation.Apply(source, new ContrastOptions { Reduction = 0, Center = value }));
+    }
+
+    [Fact]
+    public void ContrastEditorRebuildsChainAndRetainsParametersThroughUndoRedoAndSerialization()
+    {
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        var editor = vm.Mutations;
+        editor.AddCommand.Execute(MutationKind.Contrast);
+        var first = editor.Operations[0];
+        editor.AddCommand.Execute(MutationKind.GaussianBlur);
+        var last = editor.Operations[1].Image;
+        editor.SelectedOperation = first;
+        var settings = Assert.IsType<QRLab.View.ViewModels.Mutations.ContrastSettingsViewModel>(editor.SelectedSettings);
+        settings.Reduction = 0.75;
+        settings.Center = 0.25;
+        var options = Assert.IsType<ContrastOptions>(editor.Operations[0].Options);
+        Assert.Equal(0.75, options.Reduction);
+        Assert.Equal(0.25, options.Center);
+        Assert.NotSame(last, editor.Operations[1].Image);
+        var valid = editor.PreviewImage;
+        settings.Center = double.NaN;
+        Assert.Same(valid, editor.PreviewImage);
+        Assert.True(vm.Workspace.HasError);
+        settings.Center = 0.25;
+        Assert.False(vm.Workspace.HasError);
+        var json = System.Text.Json.JsonSerializer.Serialize<MutationOptions>(options);
+        Assert.Equal(options, System.Text.Json.JsonSerializer.Deserialize<MutationOptions>(json));
+        editor.UndoCommand.Execute(null);
+        editor.UndoCommand.Execute(null);
+        editor.RedoCommand.Execute(null);
+        var restored = Assert.IsType<QRLab.View.ViewModels.Mutations.ContrastSettingsViewModel>(editor.SelectedSettings);
+        Assert.Equal(0.75, restored.Reduction);
+        Assert.Equal(0.25, restored.Center);
+    }
+
+    [Theory]
     [InlineData(0)]
     [InlineData(25)]
     [InlineData(100)]
@@ -71,7 +153,7 @@ public sealed class MutationTests
     public void EditorOffersOnlyMutationsThatPreserveTheImageGrid()
     {
         using var vm = TestApplicationFactory.CreateMainWindow();
-        Assert.Equal(new[] { MutationKind.GaussianBlur, MutationKind.SaltAndPepper, MutationKind.Occlusion, MutationKind.JpegCompression },
+        Assert.Equal(new[] { MutationKind.GaussianBlur, MutationKind.SaltAndPepper, MutationKind.Occlusion, MutationKind.JpegCompression, MutationKind.Contrast },
             vm.Mutations.AvailableMutations.Select(option => option.Id));
     }
 
