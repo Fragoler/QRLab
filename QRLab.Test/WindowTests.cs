@@ -27,6 +27,49 @@ public static class TestAppBuilder
 public sealed class WindowTests
 {
     [AvaloniaFact]
+    public void QrMaskDropdownBindsSelectionShowsPatternTooltipAndHidesForBarcodes()
+    {
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        var window = new MainWindow { DataContext = vm };
+        try
+        {
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            window.UpdateLayout();
+            var mask = window.GetVisualDescendants().OfType<ComboBox>().Single(c => c.Name == "QrMaskChoice");
+            var correction = window.GetVisualDescendants().OfType<ComboBox>().Single(c => c.Name == "QrCorrectionChoice");
+            Assert.Equal(-1, mask.SelectedValue);
+            mask.SelectedItem = vm.Generation.Settings.Qr.Masks.Single(m => m.Value == 5);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(5, vm.Generation.Settings.Qr.MaskPattern);
+            vm.Generation.Settings.Qr.MaskPattern = 3;
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(3, mask.SelectedValue);
+            mask.IsDropDownOpen = true;
+            Dispatcher.UIThread.RunJobs();
+            window.UpdateLayout();
+            var item = Assert.IsType<ComboBoxItem>(mask.ContainerFromIndex(4));
+            var tooltipHost = item.GetVisualDescendants().OfType<Border>()
+                .Single(border => ToolTip.GetTip(border) is StackPanel);
+            Assert.Equal(PlacementMode.Right, ToolTip.GetPlacement(tooltipHost));
+            ToolTip.SetIsOpen(tooltipHost, true);
+            Dispatcher.UIThread.RunJobs();
+            var tooltip = Assert.IsType<StackPanel>(ToolTip.GetTip(tooltipHost));
+            var preview = Assert.Single(tooltip.GetVisualDescendants().OfType<BitmapPreview>());
+            Assert.Same(vm.Generation.Settings.Qr.Masks[4].Preview, preview.Image);
+            ToolTip.SetIsOpen(tooltipHost, false);
+            mask.IsDropDownOpen = false;
+            vm.Generation.Settings.Format = CodeKind.Barcode;
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(mask.IsEffectivelyVisible);
+            Assert.False(correction.IsEffectivelyVisible);
+            var quietZone = window.GetVisualDescendants().OfType<NumericUpDown>().Single(c => c.Name == "GenerationQuietZone");
+            Assert.True(quietZone.IsEffectivelyVisible);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
     public async Task RecognitionSummaryOpensFirstAndMismatchRowsAreGold()
     {
         using var vm = TestApplicationFactory.CreateMainWindow();

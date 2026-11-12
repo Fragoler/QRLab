@@ -102,7 +102,7 @@ public sealed partial class GenerationSettingsViewModel : ObservableObject
     public GenerationOptions ToOptions()
     {
         GenerationOptions settings = IsQr
-            ? new QrGenerationOptions { Version = Integer(Qr.Version), Correction = Qr.Correction }
+            ? new QrGenerationOptions { Version = Integer(Qr.Version), Correction = Qr.Correction, MaskPattern = Qr.MaskPattern }
             : BarcodeGenerationOptions.Create(Barcode.Type);
         return settings with
         {
@@ -138,6 +138,7 @@ public sealed partial class GenerationSettingsViewModel : ObservableObject
         {
             Qr.Version = qr.Version;
             Qr.Correction = qr.Correction;
+            Qr.MaskPattern = qr.MaskPattern;
         }
         else if (settings is BarcodeGenerationOptions barcode) Barcode.Type = barcode.BarcodeType;
     }

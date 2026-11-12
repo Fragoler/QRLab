@@ -21,6 +21,88 @@ public sealed class GenerationTests : IDisposable
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"QRLab.Tests-{Guid.NewGuid():N}");
 
     [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(7)]
+    public void FixedQrMaskIsEncodedInFormatInformationAndDecodes(int mask)
+    {
+        var options = new QrGenerationOptions { MaskPattern = mask, Version = 2, QuietZone = 0 };
+        var matrix = new QrCodeEncoder().Encode("MASK TEST", options);
+        var decoded = new ZXing.QrCode.Internal.Decoder().decode(matrix, null);
+        Assert.NotNull(decoded);
+        Assert.Equal("MASK TEST", decoded.Text);
+        Assert.Equal(mask, Assert.IsType<ZXing.QrCode.Internal.QRCodeDecoderMetaData>(decoded.Other).DataMask);
+    }
+
+    [Theory]
+    [InlineData(-2)]
+    [InlineData(8)]
+    public void InvalidQrMaskIsRejected(int mask) =>
+        Assert.Throws<ArgumentException>(() => _generator.CreateSamples(new QrGenerationOptions { MaskPattern = mask, Count = 1 }));
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(0)]
+    [InlineData(7)]
+    public void QrMaskSurvivesStorageAndSettingsRoundTrip(int mask)
+    {
+        var options = new QrGenerationOptions { MaskPattern = mask, Count = 1, Template = "MASK" };
+        var storage = TestApplicationFactory.CreateStorage();
+        var folder = Path.Combine(_root, "mask");
+        storage.Save(_generator.CreateSamples(options), new(folder));
+        var loaded = Assert.Single(storage.Load(folder).Samples);
+        Assert.Equal(options, loaded.Settings);
+        var settings = new GenerationSettingsViewModel();
+        settings.ApplyOptions(loaded.Settings, 1);
+        Assert.Equal(mask, settings.Qr.MaskPattern);
+        Assert.Equal(mask, Assert.IsType<QrGenerationOptions>(settings.ToOptions()).MaskPattern);
+        settings.Format = CodeKind.Barcode;
+        Assert.IsType<Code128GenerationOptions>(settings.ToOptions());
+        settings.Format = CodeKind.QrCode;
+        Assert.Equal(mask, settings.Qr.MaskPattern);
+    }
+
+    [Fact]
+    public void OlderQrSettingsDefaultToAutomaticMaskAndMaskChoicesHaveCorrectPatterns()
+    {
+        var older = System.Text.Json.JsonSerializer.Deserialize<GenerationOptions>("""{"$code":"qr"}""");
+        Assert.Equal(GenerationDefaults.AutomaticQrMask, Assert.IsType<QrGenerationOptions>(older).MaskPattern);
+        var choices = GenerationChoices.QrMasks;
+        Assert.Equal(new[] { "Авто", "000", "001", "010", "011", "100", "101", "110", "111" }, choices.Select(c => c.Name));
+        Assert.Null(choices[0].Preview);
+        Assert.False(choices[0].HasPreview);
+        foreach (var choice in choices.Skip(1))
+        {
+            var preview = choice.Preview!;
+            Assert.True(choice.HasPreview);
+            Assert.Equal(24, preview.Width);
+            Assert.Equal(24, preview.Height);
+            for (var y = 0; y < preview.Height; y++)
+            for (var x = 0; x < preview.Width; x++)
+            {
+                var expected = choice.Value switch
+                {
+                    0 => (x + y) % 2 == 0,
+                    1 => y % 2 == 0,
+                    2 => x % 3 == 0,
+                    3 => (x + y) % 3 == 0,
+                    4 => (y / 2 + x / 3) % 2 == 0,
+                    5 => x * y % 2 + x * y % 3 == 0,
+                    6 => (x * y % 2 + x * y % 3) % 2 == 0,
+                    7 => ((x + y) % 2 + x * y % 3) % 2 == 0,
+                    _ => throw new InvalidOperationException()
+                };
+                Assert.Equal(expected, preview[x, y]);
+            }
+        }
+    }
+
+    [Theory]
     [InlineData("1", 41)]
     [InlineData("A", 25)]
     [InlineData("a", 16)]

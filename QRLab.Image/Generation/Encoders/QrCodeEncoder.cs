@@ -24,6 +24,7 @@ public sealed class QrCodeEncoder : CodeEncoder
             _ => throw new ArgumentOutOfRangeException(nameof(options))
         };
         if (qr.Version != GenerationDefaults.AutomaticQrVersion) hints[EncodeHintType.QR_VERSION] = qr.Version;
+        if (qr.MaskPattern != GenerationDefaults.AutomaticQrMask) hints[EncodeHintType.QR_MASK_PATTERN] = qr.MaskPattern;
         return hints;
     }
 }

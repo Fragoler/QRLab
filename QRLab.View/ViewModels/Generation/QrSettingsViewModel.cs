@@ -9,5 +9,7 @@ public sealed partial class QrSettingsViewModel : ObservableObject
 {
     [ObservableProperty] private QrCorrectionLevel _correction = GenerationDefaults.Correction;
     [ObservableProperty] private decimal? _version = GenerationDefaults.AutomaticQrVersion;
+    [ObservableProperty] private int _maskPattern = GenerationDefaults.AutomaticQrMask;
     public IReadOnlyList<EnumOption<QrCorrectionLevel>> Corrections => GenerationChoices.Corrections;
+    public IReadOnlyList<QrMaskOption> Masks => GenerationChoices.QrMasks;
 }

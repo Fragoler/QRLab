@@ -75,21 +75,54 @@
                   </DataTemplate>
                 </ListBox.ItemTemplate>
               </ListBox>
-              <StackPanel IsVisible="{Binding Settings.IsQr}" Spacing="5">
+
+              <StackPanel Name="QrGenerationSettings" IsVisible="{Binding Settings.IsQr}" Spacing="5">
                 <TextBlock Text="Класс размера QR" Classes="label"/>
-                <NumericUpDown Value="{Binding Settings.Qr.Version, Mode=TwoWay}" 
-                               Minimum="{Binding Settings.Limits.QrVersion.Minimum}" 
-                               Maximum="{Binding Settings.Limits.QrVersion.Maximum}" 
+                <NumericUpDown Value="{Binding Settings.Qr.Version, Mode=TwoWay}"
+                               Minimum="{Binding Settings.Limits.QrVersion.Minimum}"
+                               Maximum="{Binding Settings.Limits.QrVersion.Maximum}"
                                FormatString="0"
                                ToolTip.Tip="0 — авто; 1–40: от 21×21 до 177×177 модулей"/>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                  <StackPanel Spacing="5">
+                    <TextBlock Text="Коррекция QR" Classes="label"/>
+                    <ComboBox Name="QrCorrectionChoice" ItemsSource="{Binding Settings.Qr.Corrections}" SelectedValue="{Binding Settings.Qr.Correction, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="5">
+                    <TextBlock Text="Маска QR" Classes="label"/>
+                    <ComboBox Name="QrMaskChoice" ItemsSource="{Binding Settings.Qr.Masks}"
+                              SelectedValue="{Binding Settings.Qr.MaskPattern, Mode=TwoWay}"
+                              SelectedValueBinding="{Binding Value, DataType=vm1:QrMaskOption}">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm1:QrMaskOption">
+                          <Border Background="Transparent" HorizontalAlignment="Stretch"
+                                  ToolTip.IsEnabled="{Binding HasPreview}" ToolTip.Placement="Right" ToolTip.ShowDelay="0">
+                            <TextBlock Text="{Binding Name}"/>
+                            <ToolTip.Tip>
+                              <StackPanel Spacing="6">
+                                <TextBlock Text="{Binding Name, StringFormat='Маска {0}'}" Classes="heading"/>
+                                <Border Background="White" Padding="6">
+                                  <c:BitmapPreview Image="{Binding Preview}" Width="144" Height="144" IsHitTestVisible="False"/>
+                                </Border>
+                              </StackPanel>
+                            </ToolTip.Tip>
+                          </Border>
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </StackPanel>
+                </Grid>
               </StackPanel>
-              <StackPanel IsVisible="{Binding Settings.IsBarcode}" Spacing="5">
+              <StackPanel Name="BarcodeGenerationSettings" IsVisible="{Binding Settings.IsBarcode}" Spacing="5">
                 <TextBlock Text="Тип штрихкода" Classes="label"/>
-                <ComboBox ItemsSource="{Binding Settings.Barcode.Types}" 
-                          SelectedValue="{Binding Settings.Barcode.Type, Mode=TwoWay}" 
-                          SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" 
+                <ComboBox ItemsSource="{Binding Settings.Barcode.Types}"
+                          SelectedValue="{Binding Settings.Barcode.Type, Mode=TwoWay}"
+                          SelectedValueBinding="{Binding Value, DataType=common:EnumOption}"
                           ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
               </StackPanel>
+              
+              <Border Classes="divider"/>
+              
               <TextBlock Text="Источник содержимого" Classes="label"/>
               <ComboBox ItemsSource="{Binding Settings.Sources}" SelectedValue="{Binding Settings.Source, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
               <StackPanel IsVisible="{Binding Settings.IsText}" Spacing="5">
@@ -136,15 +169,11 @@
                   <TextBlock Text="Формат файла" Classes="label"/>
                   <TextBlock Text="{x:Static images:RasterImage.FormatName}" Classes="muted"/>
                 </StackPanel>
-                <StackPanel Grid.Column="1" IsVisible="{Binding Settings.IsQr}">
-                  <TextBlock Text="Коррекция QR" Classes="label"/>
-                  <ComboBox ItemsSource="{Binding Settings.Qr.Corrections}" SelectedValue="{Binding Settings.Qr.Correction, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
+                <StackPanel Grid.Column="1">
+                  <TextBlock Text="Тихая зона, модулей" Classes="label" TextWrapping="Wrap"/>
+                  <NumericUpDown Name="GenerationQuietZone" Value="{Binding Settings.QuietZone, Mode=TwoWay}" Minimum="{Binding Settings.Limits.QuietZone.Minimum}" Maximum="{Binding Settings.Limits.QuietZone.Maximum}" FormatString="0"/>
                 </StackPanel>
               </Grid>
-              <StackPanel>
-                <TextBlock Text="Тихая зона, модулей" Classes="label"/>
-                <NumericUpDown Value="{Binding Settings.QuietZone, Mode=TwoWay}" Minimum="{Binding Settings.Limits.QuietZone.Minimum}" Maximum="{Binding Settings.Limits.QuietZone.Maximum}" FormatString="0"/>
-              </StackPanel>
             </StackPanel>
           </ScrollViewer>
           <StackPanel Grid.Row="2" Margin="14" Spacing="8">

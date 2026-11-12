@@ -7,6 +7,10 @@ namespace QRLab.View.ViewModels.Generation;
 
 public static class GenerationChoices
 {
+    public static IReadOnlyList<QrMaskOption> QrMasks { get; } = Array.AsReadOnly(
+        new[] { new QrMaskOption(GenerationDefaults.AutomaticQrMask) }
+            .Concat(Enumerable.Range(0, 8).Select(mask => new QrMaskOption(mask))).ToArray());
+
     public static IReadOnlyList<EnumOption<GenerationMode>> Modes { get; } = Array.AsReadOnly<EnumOption<GenerationMode>>(
     [
         new(GenerationMode.Single, "Один код"),

@@ -16,6 +16,7 @@ public static class GenerationDefaults
     public const int Height = 360;
     public const int QuietZone = 2;
     public const int AutomaticQrVersion = 0;
+    public const int AutomaticQrMask = -1;
     public const QrCorrectionLevel Correction = QrCorrectionLevel.High;
     public const BarcodeType Barcode = BarcodeType.Code128;
     public const GenerationMode Mode = GenerationMode.Batch;
