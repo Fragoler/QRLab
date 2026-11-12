@@ -29,7 +29,7 @@ public static class MutationChoices
             new(MutationKind.Marker, "Маркер", "pencil"),
             new(MutationKind.Dilation, "Расширение", "bigger"),
             new(MutationKind.Erosion, "Эрозия", "smaller"),
-            new(MutationKind.PrintDefects, "Непропечатанные участки", "droplets")
+            new(MutationKind.PrintDefects, "Деффект печати", "printer")
         ]);
     
     public static FrameLabel Original { get; } = new("Исходник", "Защищён");
