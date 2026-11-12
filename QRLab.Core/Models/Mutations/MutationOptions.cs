@@ -11,6 +11,7 @@ namespace QRLab.Core.Models.Mutations;
 [JsonDerivedType(typeof(MarkerOptions), "marker")]
 [JsonDerivedType(typeof(DilationOptions), "dilation")]
 [JsonDerivedType(typeof(ErosionOptions), "erosion")]
+[JsonDerivedType(typeof(PrintDefectsOptions), "print-defects")]
 public abstract record MutationOptions
 {
     [JsonIgnore] public abstract MutationKind Kind { get; }

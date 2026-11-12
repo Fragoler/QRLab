@@ -153,7 +153,7 @@ public sealed class MutationTests
     public void EditorOffersOnlyMutationsThatPreserveTheImageGrid()
     {
         using var vm = TestApplicationFactory.CreateMainWindow();
-        Assert.Equal(new[] { MutationKind.GaussianBlur, MutationKind.SaltAndPepper, MutationKind.Occlusion, MutationKind.JpegCompression, MutationKind.Contrast, MutationKind.Marker, MutationKind.Dilation, MutationKind.Erosion },
+        Assert.Equal(new[] { MutationKind.GaussianBlur, MutationKind.SaltAndPepper, MutationKind.Occlusion, MutationKind.JpegCompression, MutationKind.Contrast, MutationKind.Marker, MutationKind.Dilation, MutationKind.Erosion, MutationKind.PrintDefects },
             vm.Mutations.AvailableMutations.Select(option => option.Id));
     }
 

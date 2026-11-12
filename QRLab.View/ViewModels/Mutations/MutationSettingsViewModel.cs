@@ -17,6 +17,7 @@ public abstract class MutationSettingsViewModel : ObservableObject
         MarkerOptions marker => new MarkerSettingsViewModel(marker),
         DilationOptions dilation => new DilationSettingsViewModel(dilation),
         ErosionOptions erosion => new ErosionSettingsViewModel(erosion),
+        PrintDefectsOptions defects => new PrintDefectsSettingsViewModel(defects),
         
         _ => throw new ArgumentOutOfRangeException(nameof(options))
     };

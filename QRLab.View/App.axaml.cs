@@ -28,7 +28,8 @@ public sealed class App : Application
                         new ContrastMutation(),
                         new MarkerMutation(),
                         new DilationMutation(),
-                        new ErosionMutation()
+                        new ErosionMutation(),
+                        new PrintDefectsMutation()
                     ],
                     new ZxingCodeRecognizer(), new CsvRecognitionReportExporter())
             };

@@ -30,7 +30,7 @@
                   <Button Command="{ReflectionBinding $parent[UserControl].DataContext.AddCommand}" CommandParameter="{Binding Value}"
                           HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,0,0,8">
                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                      <c:SvgIcon Source="{Binding Icon}"/><TextBlock Grid.Column="1" Text="{Binding Name}"/>
+                      <c:SvgIcon Source="{Binding Icon}"/><TextBlock Grid.Column="1" Text="{Binding Name}" TextWrapping="Wrap"/>
                       <c:SvgIcon Grid.Column="2" Source="plus" Width="12" Height="12"/>
                     </Grid>
                   </Button>

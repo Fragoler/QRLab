@@ -22,7 +22,8 @@ public sealed partial class MutationsViewModel : ScreenViewModel, IDisposable
         [MutationKind.Contrast] = new ContrastSettingsViewModel(new()),
         [MutationKind.Marker] = new MarkerSettingsViewModel(new()),
         [MutationKind.Dilation] = new DilationSettingsViewModel(new()),
-        [MutationKind.Erosion] = new ErosionSettingsViewModel(new())
+        [MutationKind.Erosion] = new ErosionSettingsViewModel(new()),
+        [MutationKind.PrintDefects] = new PrintDefectsSettingsViewModel(new())
     };
     private SampleViewModel? _sample;
     private int _selectedIndex = -1;

@@ -27,6 +27,34 @@ public static class TestAppBuilder
 public sealed class WindowTests
 {
     [AvaloniaFact]
+    public void PrintDefectSettingsBindCountDiameterDistributionAndSeed()
+    {
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        vm.Generation.Settings.Mode = GenerationMode.Single;
+        vm.Generation.GenerateCommand.Execute(null);
+        vm.Mutations.AddCommand.Execute(MutationKind.PrintDefects);
+        var window = new MainWindow { DataContext = vm };
+        try
+        {
+            window.Show(); vm.NavigateCommand.Execute("02"); Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            var view = Assert.Single(window.GetVisualDescendants().OfType<QRLab.View.Views.Mutations.PrintDefectsSettingsView>());
+            var inputs = view.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
+            Assert.Equal(4, inputs.Length);
+            inputs[0].Value = 12; inputs[1].Value = 4.5m; inputs[2].Value = 30; inputs[3].Value = 123;
+            var distribution = Assert.Single(view.GetVisualDescendants().OfType<ComboBox>());
+            Assert.Equal(3, distribution.Items.Count);
+            distribution.SelectedItem = QRLab.View.ViewModels.Mutations.MutationChoices.PrintDefectDistributions.Single(d => d.Id == PrintDefectSizeDistribution.Normal);
+            Dispatcher.UIThread.RunJobs();
+            var options = Assert.IsType<PrintDefectsOptions>(vm.Mutations.SelectedOperation!.Options);
+            Assert.Equal(12, options.Count); Assert.Equal(4.5, options.Diameter);
+            Assert.Equal(30, options.SizeVariationPercent); Assert.Equal(123, options.Seed);
+            Assert.Equal(PrintDefectSizeDistribution.Normal, options.Distribution);
+            Assert.False(vm.Workspace.HasError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
     public void MorphologySettingsShareViewAndBindIntegerParameters()
     {
         using var vm = TestApplicationFactory.CreateMainWindow();

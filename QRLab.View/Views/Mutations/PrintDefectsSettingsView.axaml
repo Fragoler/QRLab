@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:QRLab.View.ViewModels.Mutations"
+             xmlns:local="using:QRLab.View.Views.Mutations"
+             xmlns:common="using:QRLab.View.ViewModels.Common"
+             x:Class="QRLab.View.Views.Mutations.PrintDefectsSettingsView"
+             x:DataType="vm:PrintDefectsSettingsViewModel">
+  <StackPanel Spacing="6">
+    <local:NumericMutationParameter Label="Количество" 
+                                    Value="{Binding Count, Mode=TwoWay}" 
+                                    Minimum="0" Maximum="{Binding MaximumCount}"/>
+    
+    <local:NumericMutationParameter Label="Диаметр, пикс." Value="{Binding Diameter, Mode=TwoWay}" Minimum="1" Maximum="256"/>
+    
+    <TextBlock Text="Распределение размеров" Classes="label"/>
+    <ComboBox ItemsSource="{Binding Distributions}" SelectedValue="{Binding Distribution, Mode=TwoWay}"
+              SelectedValueBinding="{Binding Value, DataType=common:EnumOption}">
+      <ComboBox.ItemTemplate><DataTemplate x:DataType="common:EnumOption"><TextBlock Text="{Binding Name}"/></DataTemplate></ComboBox.ItemTemplate>
+    </ComboBox>
+    <local:NumericMutationParameter Label="Разброс размеров ±, %" Value="{Binding SizeVariationPercent, Mode=TwoWay}" Minimum="0" Maximum="100"/>
+    
+    <TextBlock Text="Seed" Classes="label"/>
+    <NumericUpDown Value="{Binding Seed, Mode=TwoWay}" Minimum="-2147483648" Maximum="2147483647" Increment="1" FormatString="0"/>
+    <Button Content="Новый seed" Command="{Binding RandomizeCommand}"/>
+  </StackPanel>
+</UserControl>

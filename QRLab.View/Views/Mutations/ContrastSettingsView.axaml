@@ -14,6 +14,5 @@
       <NumericUpDown Grid.Column="1" Value="{Binding Center, Mode=TwoWay}" Minimum="0" Maximum="1" Increment="0.01" FormatString="0.00"/>
     </Grid>
     <Slider Minimum="0" Maximum="1" Value="{Binding Center, Mode=TwoWay}"/>
-    <TextBlock Text="Снижение: 0 — без изменений, 1 — все цвета равны центру. Центр: 0 — чёрный, 0.5 — серый, 1 — белый." Classes="muted" TextWrapping="Wrap"/>
   </StackPanel>
 </UserControl>
