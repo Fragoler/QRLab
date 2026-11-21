@@ -61,7 +61,7 @@ public sealed partial class GenerationSettingsViewModel : ObservableObject
                 var options = ToOptions();
                 // Preview the longest numbered payload in the batch without generating random data.
                 var content = IsRandom
-                    ? new string(options is Ean13GenerationOptions ? '1' : 'a', options.RandomLength)
+                    ? new string('a', options.RandomLength)
                     : options.Source == ContentSource.NumberedTemplate
                         ? options.Template.Replace(GenerationDefaults.NumberPlaceholder,
                             checked(options.FirstNumber + options.Count - 1).ToString(GenerationDefaults.NumberFormat))
@@ -103,7 +103,7 @@ public sealed partial class GenerationSettingsViewModel : ObservableObject
     {
         GenerationOptions settings = IsQr
             ? new QrGenerationOptions { Version = Integer(Qr.Version), Correction = Qr.Correction, MaskPattern = Qr.MaskPattern }
-            : BarcodeGenerationOptions.Create(Barcode.Type);
+            : Barcode.ToOptions();
         return settings with
         {
             Template = Template, FirstNumber = Integer(FirstNumber),
@@ -140,7 +140,7 @@ public sealed partial class GenerationSettingsViewModel : ObservableObject
             Qr.Correction = qr.Correction;
             Qr.MaskPattern = qr.MaskPattern;
         }
-        else if (settings is BarcodeGenerationOptions barcode) Barcode.Type = barcode.BarcodeType;
+        else if (settings is Pdf417GenerationOptions pdf) Barcode.ApplyOptions(pdf);
     }
 
 }

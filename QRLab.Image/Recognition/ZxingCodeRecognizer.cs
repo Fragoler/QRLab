@@ -14,6 +14,10 @@ public sealed class ZxingCodeRecognizer : ICodeRecognizer
 {
     // Timed-out native/decoder work may finish later; keep the number of workers bounded.
     private readonly SemaphoreSlim _workers = new(2);
+    private readonly CodeInspectorRegistry _inspectors;
+
+    public ZxingCodeRecognizer() : this(CodeInspectorRegistry.Default) { }
+    public ZxingCodeRecognizer(CodeInspectorRegistry inspectors) => _inspectors = inspectors;
 
     public async Task<IReadOnlyList<RecognitionPreview>> RecognizeAsync(IReadOnlyList<SamplePreview> samples,
         RecognitionOptions options, CancellationToken cancellationToken = default)
@@ -66,7 +70,7 @@ public sealed class ZxingCodeRecognizer : ICodeRecognizer
         public CodeInspection? Inspection;
     }
 
-    private static (string? Content, string? Error) Decode(SamplePreview sample, RecognitionOptions options, PreparedBitmaps bitmaps)
+    private (string? Content, string? Error) Decode(SamplePreview sample, RecognitionOptions options, PreparedBitmaps bitmaps)
     {
         try
         {
@@ -81,7 +85,7 @@ public sealed class ZxingCodeRecognizer : ICodeRecognizer
                 {
                     TryHarder = options.Enhanced,
                     TryInverted = options.Enhanced,
-                    PossibleFormats = [BarcodeFormat.QR_CODE, BarcodeFormat.EAN_13, BarcodeFormat.CODE_128, BarcodeFormat.PDF_417]
+                    PossibleFormats = [BarcodeFormat.QR_CODE, BarcodeFormat.PDF_417]
                 }
             };
             
@@ -89,7 +93,7 @@ public sealed class ZxingCodeRecognizer : ICodeRecognizer
             var result = reader.Decode(luminance);
             if (sample.OriginalBitmap is not null)
             {
-                bitmaps.Inspection = CodeInspectors.For(sample.Settings).Inspect(sample, new HybridBinarizer(luminance).BlackMatrix, result, bitmaps.Final);
+                bitmaps.Inspection = _inspectors.For(sample.Settings).Inspect(sample, new HybridBinarizer(luminance).BlackMatrix, result, bitmaps.Final);
                 bitmaps.Final ??= bitmaps.Inspection.Observed;
             }
             

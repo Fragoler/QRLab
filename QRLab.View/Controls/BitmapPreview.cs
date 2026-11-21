@@ -92,15 +92,17 @@ public sealed class BitmapPreview : Control
                     if (Layout is { } layout && layout.Width == image.Width && layout.Height == image.Height)
                     {
                         var cell = layout[x, y];
-                        Color? tint = HighlightZones && cell.Role is not (ModuleRole.Data or ModuleRole.Remainder)
-                            ? ZoneColor(cell.Role) : HighlightBlocks && cell.Block >= 0
+                        var serviceZone = cell.Codeword < 0 && cell.Role is not (ModuleRole.Data or ModuleRole.Remainder or ModuleRole.QuietZone);
+                        Color? tint = HighlightZones && serviceZone
+                            ? ZoneColor(cell.Role)
+                            : HighlightBlocks && !layout.HasErrorCorrectionWords && cell.Block >= 0
                                 ? BlockPalette.ColorFor(cell.Block, showBlack)
                                 : HighlightCodewords && cell.Codeword >= 0
-                                ? (cell.Codeword % 2 == 0 ? Color.FromRgb(40, 140, 165) : Color.FromRgb(110, 205, 225)) : null;
+                                ? BlockPalette.ColorFor(cell.Codeword, showBlack) : null;
                         if (tint is { } color)
                         {
-                            var blockColor = HighlightBlocks && cell.Block >= 0;
-                            byte Shade(byte component) => blockColor ? component
+                            var categoricalColor = !(HighlightZones && serviceZone) && (HighlightBlocks || HighlightCodewords);
+                            byte Shade(byte component) => categoricalColor ? component
                                 : showBlack ? (byte)(component * .5) : (byte)(component * .4 + 255 * .6);
                             row[i] = Shade(color.B); row[i + 1] = Shade(color.G); row[i + 2] = Shade(color.R);
                         }

@@ -7,7 +7,7 @@ using ZXing.Common;
 
 namespace QRLab.Image.Recognition.Inspection;
 
-internal interface ICodeInspector
+public interface ICodeInspector
 {
     bool Supports(GenerationOptions settings);
     CodeLayout CreateLayout(BinaryImage original, GenerationOptions settings);

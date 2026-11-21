@@ -64,21 +64,8 @@ internal abstract class CodeInspector : ICodeInspector
         ModuleRole.Finder => "Поисковые узоры", ModuleRole.Alignment => "Выравнивающие узоры", ModuleRole.Timing => "Метки времени",
         ModuleRole.Format => "Формат", ModuleRole.Version => "Версия", ModuleRole.Separator => "Разделители", ModuleRole.Fixed => "Фиксированный модуль",
         ModuleRole.Guard => "Старт / стоп / защитные штрихи", ModuleRole.Checksum => "Контрольная сумма", ModuleRole.RowIndicator => "Индикаторы строк",
-        ModuleRole.QuietZone => "Тихая зона", ModuleRole.Remainder => "Остаточные биты", _ => "Кодовые слова"
+        ModuleRole.QuietZone => "Тихая зона", ModuleRole.Remainder => "Остаточные биты", ModuleRole.ErrorCorrection => "Проверочные слова", _ => "Кодовые слова"
     };
 
     protected const string ReferenceWarning = "Оценка по сетке исходника: при геометрических искажениях это не сетка, выделенная декодером. Точную причину отказа по ней установить нельзя.";
-}
-
-internal static class CodeInspectors
-{
-    private static readonly IInspectionReportBuilder Reports = new InspectionReportBuilder();
-    private static readonly CodeInspector[] Inspectors =
-    [
-        new CategorizedCodeInspector(new QrCodeInspector(new QrStructureProvider()), Reports),
-        new CategorizedCodeInspector(new Ean13Inspector(), Reports),
-        new CategorizedCodeInspector(new Code128Inspector(), Reports),
-        new CategorizedCodeInspector(new Pdf417Inspector(), Reports)
-    ];
-    public static CodeInspector For(GenerationOptions settings) => Inspectors.Single(inspector => inspector.Supports(settings));
 }

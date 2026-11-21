@@ -27,6 +27,127 @@ public static class TestAppBuilder
 public sealed class WindowTests
 {
     [AvaloniaFact]
+    public void Pdf417ServiceOverlayColorsGuardsAndRowIndicatorsWithoutColoringWordsOrQuietZone()
+    {
+        var roles = new[]
+        {
+            QRLab.Core.Models.Recognition.ModuleRole.Guard,
+            QRLab.Core.Models.Recognition.ModuleRole.RowIndicator,
+            QRLab.Core.Models.Recognition.ModuleRole.Data,
+            QRLab.Core.Models.Recognition.ModuleRole.ErrorCorrection,
+            QRLab.Core.Models.Recognition.ModuleRole.RowIndicator,
+            QRLab.Core.Models.Recognition.ModuleRole.Guard,
+            QRLab.Core.Models.Recognition.ModuleRole.QuietZone
+        };
+        var preview = new BitmapPreview
+        {
+            Image = new QRLab.Core.Models.Images.BinaryImage(7, 1, new byte[1]),
+            Layout = new(7, 1, roles.Select((role, index) =>
+                new QRLab.Core.Models.Recognition.ModuleCell(role, index is 2 or 3 ? index - 2 : -1)).ToArray()),
+            ShowModules = false, HighlightZones = true
+        };
+        preview.Measure(new Size(700, 100)); preview.Arrange(new Rect(0, 0, 700, 100));
+        using var target = new RenderTargetBitmap(new PixelSize(700, 100));
+        target.Render(preview);
+        using var png = new MemoryStream();
+        target.Save(png, PngBitmapEncoderOptions.Default);
+        using var bitmap = SkiaSharp.SKBitmap.Decode(png.ToArray());
+        foreach (var index in new[] { 0, 1, 4, 5 })
+            Assert.NotEqual(SkiaSharp.SKColors.White, bitmap.GetPixel(index * 100 + 50, 50));
+        foreach (var index in new[] { 2, 3, 6 })
+            Assert.Equal(SkiaSharp.SKColors.White, bitmap.GetPixel(index * 100 + 50, 50));
+        Assert.Equal(bitmap.GetPixel(50, 50), bitmap.GetPixel(550, 50));
+        Assert.Equal(bitmap.GetPixel(150, 50), bitmap.GetPixel(450, 50));
+        Assert.NotEqual(bitmap.GetPixel(50, 50), bitmap.GetPixel(150, 50));
+    }
+
+    [AvaloniaFact]
+    public void Pdf417OverlaySeparatesAdjacentWordsWithoutSeparateParityHighlight()
+    {
+        var cells = Enumerable.Range(0, 34 * 8).Select(index =>
+        {
+            var x = index % 34;
+            var y = index / 34;
+            var word = y / 4 * 2 + x / 17;
+            return new QRLab.Core.Models.Recognition.ModuleCell(
+                word == 3 ? QRLab.Core.Models.Recognition.ModuleRole.ErrorCorrection : QRLab.Core.Models.Recognition.ModuleRole.Data,
+                word, x % 17) { Block = 0 };
+        }).ToArray();
+        var preview = new BitmapPreview
+        {
+            Image = new QRLab.Core.Models.Images.BinaryImage(34, 8, new byte[34]),
+            Layout = new(34, 8, cells), ShowModules = false, HighlightCodewords = true
+        };
+        preview.Measure(new Size(340, 80)); preview.Arrange(new Rect(0, 0, 340, 80));
+        using (var words = Render())
+        {
+            Assert.NotEqual(words.GetPixel(85, 20), words.GetPixel(255, 20));
+            Assert.NotEqual(words.GetPixel(85, 20), words.GetPixel(85, 60));
+            Assert.NotEqual(SkiaSharp.SKColors.White, words.GetPixel(255, 60));
+        }
+        preview.HighlightCodewords = false;
+        preview.HighlightBlocks = true;
+        using var parity = Render();
+        Assert.Equal(SkiaSharp.SKColors.White, parity.GetPixel(85, 20));
+        Assert.Equal(SkiaSharp.SKColors.White, parity.GetPixel(255, 20));
+        Assert.Equal(SkiaSharp.SKColors.White, parity.GetPixel(85, 60));
+        Assert.Equal(SkiaSharp.SKColors.White, parity.GetPixel(255, 60));
+
+        SkiaSharp.SKBitmap Render()
+        {
+            using var target = new RenderTargetBitmap(new PixelSize(340, 80));
+            target.Render(preview);
+            using var png = new MemoryStream();
+            target.Save(png, PngBitmapEncoderOptions.Default);
+            return SkiaSharp.SKBitmap.Decode(png.ToArray());
+        }
+    }
+
+    [AvaloniaFact]
+    public void ComparisonOffersPdf417ServiceZonesWithoutParityControlAndRestoresQrControls()
+    {
+        using var vm = TestApplicationFactory.CreateMainWindow();
+        vm.Generation.Settings.Mode = GenerationMode.Single;
+        vm.Generation.GenerateCommand.Execute(null);
+        var qr = vm.Workspace.SelectedSample;
+        var window = new MainWindow { DataContext = vm };
+        try
+        {
+            window.Show(); vm.NavigateCommand.Execute("04"); Dispatcher.UIThread.RunJobs();
+            var zones = window.GetVisualDescendants().OfType<CheckBox>().Single(box => box.Name == "HighlightZonesCheckBox");
+            var help = window.GetVisualDescendants().OfType<HoldButton>().Single();
+            Assert.True(zones.IsEffectivelyVisible);
+            zones.IsChecked = true;
+            vm.Generation.Settings.Format = CodeKind.Barcode;
+            vm.Generation.GenerateCommand.Execute(null);
+            Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            Assert.True(zones.IsEffectivelyVisible);
+            Assert.Equal("Служебные зоны", zones.Content);
+            Assert.True(zones.IsEnabled);
+            Assert.False(help.IsEffectivelyVisible);
+            Assert.True(vm.Comparison.HighlightZones);
+            Assert.True(vm.Comparison.Options.Codewords);
+            Assert.False(vm.Comparison.Options.Blocks);
+            var correction = window.GetVisualDescendants().OfType<CheckBox>().Single(box => box.Name == "HighlightBlocksCheckBox");
+            Assert.False(correction.IsEffectivelyVisible);
+            zones.IsChecked = false;
+            Dispatcher.UIThread.RunJobs();
+            Assert.All(window.GetVisualDescendants().OfType<BitmapPreview>(), preview => Assert.False(preview.HighlightZones));
+            zones.IsChecked = true;
+            Dispatcher.UIThread.RunJobs();
+            Assert.All(window.GetVisualDescendants().OfType<BitmapPreview>(), preview => Assert.True(preview.HighlightZones));
+            vm.Workspace.SelectedSample = qr;
+            Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            Assert.True(zones.IsEffectivelyVisible);
+            Assert.Equal("Служебные зоны", zones.Content);
+            Assert.True(help.IsEffectivelyVisible);
+            Assert.True(correction.IsEffectivelyVisible);
+            Assert.Equal("Блоки коррекции", correction.Content);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
     public void RandomPerSampleCheckboxReplacesSeedButtonForBothRandomMutations()
     {
         using var vm = TestApplicationFactory.CreateMainWindow();
@@ -406,10 +527,10 @@ public sealed class WindowTests
 
             var barcodeCombo = window.GetVisualDescendants().OfType<ComboBox>()
                 .Single(combo => ReferenceEquals(combo.ItemsSource, vm.Generation.Settings.Barcode.Types));
-            barcodeCombo.SelectedItem = vm.Generation.Settings.Barcode.Types.Single(option => option.Id == BarcodeType.Ean13);
+            barcodeCombo.SelectedItem = vm.Generation.Settings.Barcode.Types.Single(option => option.Id == BarcodeType.Pdf417);
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(BarcodeType.Ean13, vm.Generation.Settings.Barcode.Type);
-            Assert.True(vm.Generation.Settings.Barcode.IsEan13);
+            Assert.Equal(BarcodeType.Pdf417, vm.Generation.Settings.Barcode.Type);
+            Assert.IsType<Pdf417GenerationOptions>(vm.Generation.Settings.ToOptions());
 
             vm.Generation.Settings.Format = CodeKind.QrCode;
             Dispatcher.UIThread.RunJobs();

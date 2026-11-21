@@ -44,8 +44,6 @@ internal sealed class QrCodeInspector(IQrStructureProvider structures) : CodeIns
         if (decoded is not null && decoded.Text != sample.Content)
             conclusion += " Расшифрованное содержимое не совпало с ожидаемым; восстановленная матрица не подтверждает исходное сообщение.";
         return new("QR", layout, compatible ? detected : null, probe, null,
-            compatible ? "Сетка модулей, выделенная QR-детектором" : ReferenceWarning,
-            "",
             conclusion, regions, blocks, damaged.Count, structure.Version.TotalCodewords, blocks.Sum(block => block.Capacity))
         {
             Basis = compatible ? InspectionBasis.DetectedModules : InspectionBasis.ReferenceGrid,

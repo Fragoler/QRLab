@@ -10,11 +10,18 @@ namespace QRLab.Image.Generation;
 public sealed class CodeGenerator : ICodeGenerator
 {
     private readonly IReadOnlyList<CodeEncoder> _encoders;
+    private readonly CodeInspectorRegistry _inspectors;
     private readonly CodeImageRenderer _renderer = new();
 
-    public CodeGenerator() : this([new QrCodeEncoder(), new BarcodeEncoder()]) { }
+    public CodeGenerator() : this([new QrCodeEncoder(), new Pdf417Encoder()]) { }
 
-    public CodeGenerator(IEnumerable<CodeEncoder> encoders) => _encoders = encoders.ToArray();
+    public CodeGenerator(IEnumerable<CodeEncoder> encoders) : this(encoders, CodeInspectorRegistry.Default) { }
+
+    public CodeGenerator(IEnumerable<CodeEncoder> encoders, CodeInspectorRegistry inspectors)
+    {
+        _encoders = encoders.ToArray();
+        _inspectors = inspectors;
+    }
 
     public IReadOnlyList<SamplePreview> CreateSamples(GenerationOptions options)
     {
@@ -37,7 +44,7 @@ public sealed class CodeGenerator : ICodeGenerator
                     new SamplePreview(number, options.GetSampleName(number), content, image, [], options)
                     {
                         OriginalBitmap = modules,
-                        Layout = CodeInspectors.For(options).CreateLayout(modules, options)
+                        Layout = _inspectors.For(options).CreateLayout(modules, options)
                     });
             }
             catch (Exception exception) when (exception is ArgumentException or WriterException)

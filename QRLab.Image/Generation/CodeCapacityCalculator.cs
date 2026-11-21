@@ -8,17 +8,21 @@ using ZXing;
 namespace QRLab.Image.Generation;
 
 /// <summary>Measures logical capacity with the same encoder and hints as generation.</summary>
-public sealed class CodeCapacityCalculator : ICodeCapacityCalculator
+public sealed class CodeCapacityCalculator(IEnumerable<CodeEncoder> encoders) : ICodeCapacityCalculator
 {
-    private readonly CodeEncoder[] _encoders = [new QrCodeEncoder(), new BarcodeEncoder()];
+    private readonly CodeEncoder[] _encoders = [.. encoders];
+
+    public CodeCapacityCalculator() : this([new QrCodeEncoder(), new Pdf417Encoder()]) { }
 
     public int Calculate(GenerationOptions options, string content)
     {
-        if (options is Ean13GenerationOptions) return 13;
         (options with { Template = "a", Source = ContentSource.Text, Count = 1, FirstNumber = 1 }).Validate();
+        if (content.Length > 0) (options with { Template = content, Source = ContentSource.Text }).PrepareContent(1);
         var encoder = _encoders.Single(e => e.Supports(options));
+        
         // In automatic mode the limit is the largest QR version.
         if (options is QrGenerationOptions { Version: 0 } qr) options = qr with { Version = 40 };
+        
         var symbol = Representative(content);
         var low = 0;
         var high = GenerationLimits.MaximumContentLength + 1;
@@ -40,9 +44,13 @@ public sealed class CodeCapacityCalculator : ICodeCapacityCalculator
 
     private static string Representative(string content)
     {
-        if (content.Length > 0 && content.All(c => c is >= '0' and <= '9')) return "1";
+        if (content.Length > 0 && content.All(c => c is >= '0' and <= '9')) 
+            return "1";
+        
         const string alphanumeric = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
-        if (content.Length > 0 && content.All(alphanumeric.Contains)) return "A";
+        if (content.Length > 0 && content.All(alphanumeric.Contains)) 
+            return "A";
+        
         // For byte mode use the widest Unicode character in the payload.
         var widest = content.EnumerateRunes().OrderByDescending(r => r.Utf8SequenceLength)
             .FirstOrDefault(new Rune('a'));

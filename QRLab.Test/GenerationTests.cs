@@ -20,6 +20,56 @@ public sealed class GenerationTests : IDisposable
     private readonly CodeGenerator _generator = new();
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"QRLab.Tests-{Guid.NewGuid():N}");
 
+    [Fact]
+    public void Pdf417ParametersSurviveStorageAndControlCapacity()
+    {
+        var options = new Pdf417GenerationOptions
+        {
+            Count = 1, Template = "Параметры PDF417", CorrectionLevel = 4,
+            MinimumColumns = 5, MaximumColumns = 5, MinimumRows = 16, MaximumRows = 16,
+            RowHeight = 3, Compaction = Pdf417Compaction.Byte, Width = 1024, Height = 768
+        };
+        var samples = _generator.CreateSamples(options);
+        var folder = Path.Combine(_root, "pdf-settings");
+        var storage = TestApplicationFactory.CreateStorage();
+        storage.Save(samples, new(folder));
+        var loaded = Assert.Single(storage.Load(folder).Samples);
+        Assert.Equal(options, loaded.Settings);
+        var settings = new GenerationSettingsViewModel();
+        settings.ApplyOptions(loaded.Settings, 1);
+        Assert.Equal(options, settings.ToOptions());
+        var capacity = new CodeCapacityCalculator();
+        Assert.True(capacity.Calculate(options with { CorrectionLevel = 0 }, "a") > capacity.Calculate(options, "a"));
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void Pdf417RowHeightControlsMatrixHeight(int height)
+    {
+        var options = new Pdf417GenerationOptions { RowHeight = height, QuietZone = 0, MinimumRows = 10, MaximumRows = 10 };
+        var matrix = new Pdf417Encoder().Encode("HEIGHT", options);
+        Assert.Equal(10 * height, matrix.Height);
+    }
+
+    [Fact]
+    public void Pdf417RejectsInvalidParametersAndIncompatibleContent()
+    {
+        Pdf417GenerationOptions[] invalid =
+        [
+            new() { CorrectionLevel = -1 }, new() { CorrectionLevel = 9 },
+            new() { MinimumColumns = 0 }, new() { MaximumColumns = 31 },
+            new() { MinimumColumns = 5, MaximumColumns = 4 },
+            new() { MinimumRows = 2 }, new() { MaximumRows = 91 },
+            new() { MinimumRows = 20, MaximumRows = 10 }, new() { RowHeight = 0 }, new() { RowHeight = 5 }
+        ];
+        Assert.All(invalid, options => Assert.Throws<ArgumentException>(options.Validate));
+        Assert.Throws<ArgumentException>(() => _generator.CreateSamples(new Pdf417GenerationOptions { Compaction = Pdf417Compaction.Numeric, Template = "ABC", Count = 1 }));
+        Assert.Throws<ArgumentException>(() => _generator.CreateSamples(new Pdf417GenerationOptions { Compaction = Pdf417Compaction.Text, Template = "Привет", Count = 1 }));
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
@@ -62,7 +112,7 @@ public sealed class GenerationTests : IDisposable
         Assert.Equal(mask, settings.Qr.MaskPattern);
         Assert.Equal(mask, Assert.IsType<QrGenerationOptions>(settings.ToOptions()).MaskPattern);
         settings.Format = CodeKind.Barcode;
-        Assert.IsType<Code128GenerationOptions>(settings.ToOptions());
+        Assert.IsType<Pdf417GenerationOptions>(settings.ToOptions());
         settings.Format = CodeKind.QrCode;
         Assert.Equal(mask, settings.Qr.MaskPattern);
     }
@@ -171,21 +221,6 @@ public sealed class GenerationTests : IDisposable
         Assert.NotEqual(ContentSource.RandomString, vm.ToOptions().Source);
     }
 
-    [Theory]
-    [InlineData(12)]
-    [InlineData(13)]
-    public void RandomEanIncludesValidCheckDigit(int length)
-    {
-        var samples = _generator.CreateSamples(new Ean13GenerationOptions
-        {
-            Source = ContentSource.RandomString, RandomLength = length, Count = 2
-        });
-        Assert.All(samples, sample =>
-        {
-            Assert.Equal(13, sample.Content.Length);
-            Assert.Equal(sample.Content, new Ean13GenerationOptions { Source = ContentSource.Text, Template = sample.Content }.PrepareContent(1));
-        });
-    }
 
     [Theory]
     [InlineData(0)]
@@ -195,10 +230,7 @@ public sealed class GenerationTests : IDisposable
         _generator.CreateSamples(new QrGenerationOptions { Source = ContentSource.RandomString, RandomLength = length }));
 
     [Theory]
-    [InlineData(CodeKind.QrCode, BarcodeType.Code128, "Привет, QRLab!", BarcodeFormat.QR_CODE)]
-    [InlineData(CodeKind.Barcode, BarcodeType.Ean13, "590123412345", BarcodeFormat.EAN_13)]
-    [InlineData(CodeKind.Barcode, BarcodeType.Ean13, "5901234123457", BarcodeFormat.EAN_13)]
-    [InlineData(CodeKind.Barcode, BarcodeType.Code128, "LAB-123456", BarcodeFormat.CODE_128)]
+    [InlineData(CodeKind.QrCode, BarcodeType.Pdf417, "Привет, QRLab!", BarcodeFormat.QR_CODE)]
     [InlineData(CodeKind.Barcode, BarcodeType.Pdf417, "QRLab PDF417", BarcodeFormat.PDF_417)]
     [InlineData(CodeKind.Barcode, BarcodeType.Pdf417, "Проверка PDF417", BarcodeFormat.PDF_417)]
     public void GeneratedRastersDecodeToOriginalContent(CodeKind kind, BarcodeType type, string content, BarcodeFormat expectedFormat)
@@ -218,17 +250,6 @@ public sealed class GenerationTests : IDisposable
         Assert.Equal(expectedFormat, result.BarcodeFormat);
     }
 
-    [Theory]
-    [InlineData("abc1234567890")]
-    [InlineData("123")]
-    [InlineData("5901234123458")]
-    [InlineData("５９０１２３４１２３４５７")]
-    [InlineData("590123412345 ")]
-    public void Ean13RejectsInvalidPayloads(string content)
-    {
-        var error = Assert.Throws<ArgumentException>(() => _generator.CreateSamples(new Ean13GenerationOptions { Template = content, Count = 1 }));
-        Assert.Contains("EAN-13", error.Message);
-    }
 
     [Fact]
     public void FixedQrVersionChangesRasterAndRejectsOverflow()
@@ -250,8 +271,8 @@ public sealed class GenerationTests : IDisposable
         var selected = workspace.SelectedSample;
         var originals = workspace.Samples.ToArray();
         vm.Generation.Settings.Format = CodeKind.Barcode;
-        vm.Generation.Settings.Barcode.Type = BarcodeType.Ean13;
-        vm.Generation.Settings.Template = "00000000{num}";
+        vm.Generation.Settings.Barcode.Type = BarcodeType.Pdf417;
+        vm.Generation.Settings.Template = new string('X', 10000);
         vm.Generation.Settings.FirstNumber = 9999;
         vm.Generation.Settings.Count = 2;
         vm.Generation.GenerateCommand.Execute(null);
@@ -304,8 +325,6 @@ public sealed class GenerationTests : IDisposable
     }
 
     [Theory]
-    [InlineData(BarcodeType.Ean13, "590123412345")]
-    [InlineData(BarcodeType.Code128, "ABC123")]
     [InlineData(BarcodeType.Pdf417, "Текст")]
     public void SavedBarcodeRestoresConcreteModelAndTypedSelection(BarcodeType type, string content)
     {

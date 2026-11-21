@@ -33,8 +33,8 @@ public sealed class RandomContentProvider : ContentProvider
 
     public override string Create(GenerationOptions options, int number)
     {
-        var alphabet = options is Ean13GenerationOptions ? "0123456789" : Alphabet;
-        var length = options is Ean13GenerationOptions && options.RandomLength == 13 ? 12 : options.RandomLength;
+        var alphabet = Alphabet;
+        var length = options.RandomLength;
         if (length is < 1 or > GenerationLimits.MaximumContentLength)
             throw new ArgumentException("Укажите допустимую длину случайной строки.");
         return string.Create(length, alphabet, (characters, source) =>

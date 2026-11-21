@@ -107,9 +107,9 @@
                 <CheckBox Content="Изменения" IsChecked="{Binding HighlightChanges}" IsEnabled="{Binding CanCompare}"/>
               </StackPanel>
               <StackPanel Grid.Column="1" Spacing="10">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                  <CheckBox Content="Зоны QR" IsChecked="{Binding HighlightZones}" IsEnabled="{Binding IsQr}"/>
-                  <c:HoldButton Grid.Column="1" Name="QrLegendButton" Classes="flat" Padding="0" IsEnabled="{Binding IsQr}"
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding Options.Zones}">
+                  <CheckBox Name="HighlightZonesCheckBox" Content="{Binding Options.ZonesLabel}" IsChecked="{Binding HighlightZones}" ToolTip.Tip="{Binding Options.ZonesDescription}"/>
+                  <c:HoldButton Grid.Column="1" Name="QrLegendButton" Classes="flat" Padding="0" IsEnabled="{Binding IsQr}" IsVisible="{Binding IsQr}"
                                 HoldCommand="{Binding OpenQrHelpCommand}"
                                 ToolTip.ServiceEnabled="{Binding !IsQrHelpOpen}"
                                 ToolTip.Tip="Нажмите — легенда зон QR. Удерживайте — подробное объяснение." AutomationProperties.Name="Легенда зон QR">
@@ -138,8 +138,8 @@
                     </Button.Flyout>
                   </c:HoldButton>
                 </Grid>
-                <CheckBox Name="HighlightCodewordsCheckBox" Content="Кодовые слова" IsChecked="{Binding HighlightCodewords}"/>
-                <CheckBox Name="HighlightBlocksCheckBox" Content="Блоки коррекции" IsChecked="{Binding HighlightBlocks}" IsEnabled="{Binding HasBlocks}" ToolTip.Tip="Каждый блок имеет свой цвет с тёмным и светлым оттенками модулей. Отключает подсветку кодовых слов."/>
+                <CheckBox Name="HighlightCodewordsCheckBox" Content="Кодовые слова" IsChecked="{Binding HighlightCodewords}" IsVisible="{Binding Options.Codewords}"/>
+                <CheckBox Name="HighlightBlocksCheckBox" Content="{Binding Options.BlocksLabel}" IsChecked="{Binding HighlightBlocks}" IsVisible="{Binding Options.Blocks}"/>
               </StackPanel>
             </Grid>
           </Border>

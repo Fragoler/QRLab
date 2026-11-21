@@ -25,8 +25,6 @@ public static class GenerationChoices
 
     public static IReadOnlyList<EnumOption<BarcodeType>> BarcodeTypes { get; } = Array.AsReadOnly<EnumOption<BarcodeType>>(
     [
-        new(BarcodeType.Ean13, "EAN-13"),
-        new(BarcodeType.Code128, "Code 128"),
         new(BarcodeType.Pdf417, "PDF417")
     ]);
 

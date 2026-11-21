@@ -18,7 +18,7 @@ public static class GenerationDefaults
     public const int AutomaticQrVersion = 0;
     public const int AutomaticQrMask = -1;
     public const QrCorrectionLevel Correction = QrCorrectionLevel.High;
-    public const BarcodeType Barcode = BarcodeType.Code128;
+    public const BarcodeType Barcode = BarcodeType.Pdf417;
     public const GenerationMode Mode = GenerationMode.Batch;
     public const CodeKind Kind = CodeKind.QrCode;
     public const ContentSource Source = ContentSource.NumberedTemplate;

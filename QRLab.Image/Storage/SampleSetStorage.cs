@@ -18,6 +18,10 @@ public sealed class SampleSetStorage : ISampleSetStorage
     private const int MaximumManifestBytes = 64 * 1024 * 1024;
     private const int MaximumImageBytes = 512 * 1024 * 1024;
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private readonly CodeInspectorRegistry _inspectors;
+
+    public SampleSetStorage() : this(CodeInspectorRegistry.Default) { }
+    public SampleSetStorage(CodeInspectorRegistry inspectors) => _inspectors = inspectors;
 
     public SampleSet Save(IReadOnlyList<SamplePreview> samples, ExportOptions options)
     {
@@ -143,13 +147,13 @@ public sealed class SampleSetStorage : ISampleSetStorage
                 {
                     // Versions 3/4 did not store module matrices (v4 stored raster pixels).
                     OriginalBitmap = originalModules,
-                    Layout = originalModules is null ? null : CodeInspectors.For(stored.Settings).CreateLayout(originalModules, stored.Settings),
+                    Layout = originalModules is null ? null : _inspectors.For(stored.Settings).CreateLayout(originalModules, stored.Settings),
                     FinalBitmap = document.Version == CurrentVersion ? ReadBitmap(stored.FinalBitmap) : null
                 };
 
                 BinaryImage RecreateModules()
                 {
-                    CodeEncoder encoder = stored.Settings.Kind == CodeKind.QrCode ? new QrCodeEncoder() : new BarcodeEncoder();
+                    CodeEncoder encoder = stored.Settings.Kind == CodeKind.QrCode ? new QrCodeEncoder() : new Pdf417Encoder();
                     return ModuleMatrix.FromEncoder(encoder.Encode(stored.Content, stored.Settings), stored.Settings);
                 }
             }).ToArray();

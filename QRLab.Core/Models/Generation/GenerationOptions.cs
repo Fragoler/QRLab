@@ -7,8 +7,6 @@ namespace QRLab.Core.Models.Generation;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$code")]
 [JsonDerivedType(typeof(QrGenerationOptions), "qr")]
-[JsonDerivedType(typeof(Ean13GenerationOptions), "ean13")]
-[JsonDerivedType(typeof(Code128GenerationOptions), "code128")]
 [JsonDerivedType(typeof(Pdf417GenerationOptions), "pdf417")]
 public abstract record GenerationOptions
 {

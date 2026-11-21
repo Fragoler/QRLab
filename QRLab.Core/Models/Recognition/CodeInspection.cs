@@ -2,7 +2,7 @@ using QRLab.Core.Models.Images;
 
 namespace QRLab.Core.Models.Recognition;
 
-public enum ModuleRole { Data, Finder, Separator, Alignment, Timing, Format, Version, Fixed, Remainder, Guard, RowIndicator, Checksum, QuietZone }
+public enum ModuleRole { Data, Finder, Separator, Alignment, Timing, Format, Version, Fixed, Remainder, Guard, RowIndicator, Checksum, QuietZone, ErrorCorrection }
 
 public readonly record struct ModuleCell(ModuleRole Role, int Codeword = -1, int Bit = -1)
 {
@@ -15,6 +15,7 @@ public sealed class CodeLayout(int width, int height, IReadOnlyList<ModuleCell> 
     public int Width { get; } = width;
     public int Height { get; } = height;
     public IReadOnlyList<ModuleCell> Cells { get; } = Array.AsReadOnly(cells.ToArray());
+    public bool HasErrorCorrectionWords { get; } = cells.Any(cell => cell.Role == ModuleRole.ErrorCorrection);
     public ModuleCell this[int x, int y] => Cells[y * Width + x];
 }
 
@@ -28,8 +29,7 @@ public sealed record CorrectionBlock(int Number, int DamagedWords, int TotalWord
 
 public sealed record CodeInspection(
     string Format, CodeLayout Layout, BinaryImage? Observed, BinaryImage ReferenceProbe,
-    BinaryImage? Restored, string SamplingDescription, string RecoveryDescription,
-    string Conclusion, IReadOnlyList<RegionDamage> Regions, IReadOnlyList<CorrectionBlock> Blocks,
+    BinaryImage? Restored, string Conclusion, IReadOnlyList<RegionDamage> Regions, IReadOnlyList<CorrectionBlock> Blocks,
     int DamagedCodewords, int TotalCodewords, int CorrectionCapacity)
 {
     public InspectionBasis Basis { get; init; }

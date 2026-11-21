@@ -20,6 +20,7 @@ public sealed partial class ComparisonViewModel : ScreenViewModel, IDisposable
     public CodeLayout? Layout => Inspection?.Layout ?? _observed?.Preview.Layout;
     public bool IsQr => _observed?.Preview.Settings.Kind == CodeKind.QrCode;
     public bool HasBlocks => Layout?.Cells.Any(cell => cell.Block >= 0) == true;
+    public Comparison.IComparisonOptions Options { get; private set; } = new Comparison.LayoutComparisonOptions(null);
     public bool HasInspection => Inspection is not null;
     public IReadOnlyList<InspectionSection> Sections => Inspection?.Sections ?? [];
     public bool HasBitmaps => OriginalBitmap is not null && FinalBitmap is not null;
@@ -85,10 +86,14 @@ public sealed partial class ComparisonViewModel : ScreenViewModel, IDisposable
 
     private void Refresh()
     {
+        Options = new Comparison.LayoutComparisonOptions(Layout);
+        if (!Options.Zones) HighlightZones = false;
+        if (!Options.Codewords) HighlightCodewords = false;
+        if (!Options.Blocks) HighlightBlocks = false;
         if (!IsQr) IsQrHelpOpen = false;
         foreach (var name in new[] { nameof(OriginalBitmap), nameof(FinalBitmap), nameof(HasBitmaps), nameof(HasOriginalBitmap), nameof(HasFinalBitmap),
                      nameof(OriginalDimensions), nameof(FinalDimensions), nameof(FinalPlaceholder), nameof(CanCompare), nameof(Comparison),
-                     nameof(Inspection), nameof(Layout), nameof(IsQr), nameof(HasBlocks), nameof(HasInspection), nameof(Sections) })
+                     nameof(Inspection), nameof(Layout), nameof(IsQr), nameof(HasBlocks), nameof(HasInspection), nameof(Sections), nameof(Options) })
             OnPropertyChanged(name);
     }
 

@@ -34,8 +34,6 @@ public sealed class InspectionReportTests
     }
 
     [Theory]
-    [InlineData(BarcodeType.Ean13)]
-    [InlineData(BarcodeType.Code128)]
     [InlineData(BarcodeType.Pdf417)]
     public async Task BarcodeFormatsUseTheSameReportPipeline(BarcodeType type)
     {
@@ -48,7 +46,10 @@ public sealed class InspectionReportTests
         Assert.Equal(0, report.Modules!.Changed);
         Assert.Equal(report.Modules.Changed, report.Regions.Sum(region => region.Changed));
         Assert.DoesNotContain(report.Parameters, parameter => parameter.Name == "Версия QR");
-        Assert.Equal(type == BarcodeType.Pdf417, report.Sections.Any(section => section.Category == InspectionCategory.Blocks));
+        Assert.DoesNotContain(report.Sections, section => section.Category == InspectionCategory.Blocks);
+        Assert.Contains(report.Parameters, parameter => parameter.Category == InspectionCategory.Codewords && parameter.Name == "Всего");
+        Assert.DoesNotContain(report.Parameters, parameter => parameter.Name == "Повреждено / всего" || parameter.Name == "Лимит превышен"
+            || parameter.Name == "Ошибок (оценка) / всего" || parameter.Name == "Метод оценки");
     }
 
     [Fact]
@@ -67,7 +68,7 @@ public sealed class InspectionReportTests
     }
 
     private static SamplePreview Create(GenerationOptions options) => Assert.Single(new CodeGenerator().CreateSamples(options with
-        { Count = 1, Template = options is Ean13GenerationOptions ? "590123412345" : "HELLO", Width = 768, Height = 512 }));
+        { Count = 1, Template = "HELLO", Width = 768, Height = 512 }));
 
     private static async Task<RecognitionPreview> Read(SamplePreview sample) => Assert.Single(await new ZxingCodeRecognizer().RecognizeAsync(
         [sample], new(10000), TestContext.Current.CancellationToken));

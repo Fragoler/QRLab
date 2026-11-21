@@ -46,17 +46,6 @@
           </Border>
           <ScrollViewer Grid.Row="1">
             <StackPanel Margin="14" Spacing="5">
-              <ListBox Classes="tabs"
-                       ItemsSource="{Binding Settings.Modes}"
-                       SelectedValue="{Binding Settings.Mode, Mode=TwoWay}"
-                       SelectedValueBinding="{Binding Value, DataType=common:EnumOption}"
-                       ItemTemplate="{StaticResource GenerationChoiceTemplate}">
-                <ListBox.ItemsPanel>
-                  <ItemsPanelTemplate>
-                    <StackPanel Orientation="Horizontal"/>
-                  </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-              </ListBox>
               <TextBlock Text="Тип кода" Classes="label"/>
               <ListBox Classes="tabs iconTabs" ItemsSource="{Binding Settings.Formats}"
                        SelectedValue="{Binding Settings.Format, Mode=TwoWay}"
@@ -119,38 +108,74 @@
                           SelectedValue="{Binding Settings.Barcode.Type, Mode=TwoWay}"
                           SelectedValueBinding="{Binding Value, DataType=common:EnumOption}"
                           ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
+                <TextBlock Text="Уровень коррекции (0-8)" Classes="label"/>
+                <NumericUpDown Name="Pdf417CorrectionLevel" Value="{Binding Settings.Barcode.CorrectionLevel, Mode=TwoWay}" Minimum="0" Maximum="8" FormatString="0"
+                               ToolTip.Tip="Число проверочных слов: 2^(уровень + 1). Они образуют один общий блок Reed–Solomon для всего символа. Теоретический предел исправления ошибок: 2^уровень слов."/>
+                <TextBlock Text="Уплотнение данных" Classes="label"/>
+                <ComboBox Name="Pdf417Compaction" ItemsSource="{Binding Settings.Barcode.Compactions}"
+                          SelectedValue="{Binding Settings.Barcode.Compaction, Mode=TwoWay}"
+                          SelectedValueBinding="{Binding Value, DataType=common:EnumOption}"
+                          ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
+                <TextBlock Text="Столбцы: минимум / максимум" Classes="label"/>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                  <NumericUpDown Value="{Binding Settings.Barcode.MinimumColumns, Mode=TwoWay}" Minimum="1" Maximum="30" FormatString="0"/>
+                  <NumericUpDown Grid.Column="1" Value="{Binding Settings.Barcode.MaximumColumns, Mode=TwoWay}" Minimum="1" Maximum="30" FormatString="0"/>
+                </Grid>
+                <TextBlock Text="Строки: минимум / максимум" Classes="label"/>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                  <NumericUpDown Value="{Binding Settings.Barcode.MinimumRows, Mode=TwoWay}" Minimum="3" Maximum="90" FormatString="0"/>
+                  <NumericUpDown Grid.Column="1" Value="{Binding Settings.Barcode.MaximumRows, Mode=TwoWay}" Minimum="3" Maximum="90" FormatString="0"/>
+                </Grid>
+                <TextBlock Text="Высота строки, модулей" Classes="label"/>
+                <NumericUpDown Value="{Binding Settings.Barcode.RowHeight, Mode=TwoWay}" Minimum="1" Maximum="4" FormatString="0"/>
               </StackPanel>
-              
+
               <Border Classes="divider"/>
-              
+
               <TextBlock Text="Источник содержимого" Classes="label"/>
               <ComboBox ItemsSource="{Binding Settings.Sources}" SelectedValue="{Binding Settings.Source, Mode=TwoWay}" SelectedValueBinding="{Binding Value, DataType=common:EnumOption}" ItemTemplate="{StaticResource GenerationChoiceTemplate}"/>
               <StackPanel IsVisible="{Binding Settings.IsText}" Spacing="5">
                 <TextBlock Text="Содержимое" Classes="label"/>
-                <TextBox Text="{Binding Settings.Template, Mode=TwoWay}" 
+                <TextBox Text="{Binding Settings.Template, Mode=TwoWay}"
                          AcceptsReturn="True" Height="62" TextWrapping="Wrap"
                          ToolTip.Tip="{}{num} — порядковый номер образца вида заполнемый слева нулями до 4х символов"/>
               </StackPanel>
               <StackPanel IsVisible="{Binding Settings.IsRandom}" Spacing="5">
                 <TextBlock Text="Длина случайной строки" Classes="label"/>
-                <NumericUpDown Value="{Binding Settings.RandomLength, Mode=TwoWay}" 
-                               Minimum="{Binding Settings.Limits.ContentLength.Minimum}" 
-                               Maximum="{Binding Settings.Limits.ContentLength.Maximum}" 
+                <NumericUpDown Value="{Binding Settings.RandomLength, Mode=TwoWay}"
+                               Minimum="{Binding Settings.Limits.ContentLength.Minimum}"
+                               Maximum="{Binding Settings.Limits.ContentLength.Maximum}"
                                FormatString="0"
-                               ToolTip.Tip="Случайная строка для каждого образца: a–z, 0–9. Для EAN-13 — 12 или 13 цифр с контрольной суммой"/>
+                               ToolTip.Tip="Случайная строка для каждого образца: a–z, 0–9."/>
               </StackPanel>
               <TextBlock Text="{Binding Settings.ContentUsage}"
                          HorizontalAlignment="Right"/>
-              <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding Settings.IsBatch}">
-                <StackPanel>
-                  <TextBlock Text="Первый номер" Classes="label"/>
-                  <NumericUpDown Value="{Binding Settings.FirstNumber, Mode=TwoWay}" Minimum="{Binding Settings.Limits.FirstNumber.Minimum}" Maximum="{Binding Settings.Limits.FirstNumber.Maximum}" FormatString="0"/>
-                </StackPanel>
-                <StackPanel Grid.Column="1">
-                  <TextBlock Text="Количество" Classes="label"/>
-                  <NumericUpDown Value="{Binding Settings.Count, Mode=TwoWay}" Minimum="{Binding Settings.Limits.Count.Minimum}" Maximum="{Binding Settings.Limits.Count.Maximum}" FormatString="0"/>
-                </StackPanel>
-              </Grid>
+
+              <Border Classes="divider"/>
+              
+              <StackPanel Spacing="8">
+                <ListBox Classes="tabs"
+                         ItemsSource="{Binding Settings.Modes}"
+                         SelectedValue="{Binding Settings.Mode, Mode=TwoWay}"
+                         SelectedValueBinding="{Binding Value, DataType=common:EnumOption}"
+                         ItemTemplate="{StaticResource GenerationChoiceTemplate}">
+                  <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                  </ListBox.ItemsPanel>
+                </ListBox>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding Settings.IsBatch}">
+                  <StackPanel>
+                    <TextBlock Text="Первый номер" Classes="label"/>
+                    <NumericUpDown Value="{Binding Settings.FirstNumber, Mode=TwoWay}" Minimum="{Binding Settings.Limits.FirstNumber.Minimum}" Maximum="{Binding Settings.Limits.FirstNumber.Maximum}" FormatString="0"/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="Количество" Classes="label"/>
+                    <NumericUpDown Value="{Binding Settings.Count, Mode=TwoWay}" Minimum="{Binding Settings.Limits.Count.Minimum}" Maximum="{Binding Settings.Limits.Count.Maximum}" FormatString="0"/>
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
 
               <Border Classes="divider"/>
 

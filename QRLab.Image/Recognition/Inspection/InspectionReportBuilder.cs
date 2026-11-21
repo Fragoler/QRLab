@@ -29,10 +29,14 @@ internal sealed class InspectionReportBuilder : IInspectionReportBuilder
             Add(InspectionCategory.Modules, "Чёрных в результате", $"{modules.FinalBlack:N0}");
             Add(InspectionCategory.Modules, "Без изменений", $"{modules.Unchanged:N0}");
         }
-        Add(InspectionCategory.Codewords, "Повреждено / всего", $"{inspection.DamagedCodewords:N0} / {inspection.TotalCodewords:N0}");
+        Add(InspectionCategory.Codewords, "Всего", $"{inspection.TotalCodewords:N0}");
         Add(InspectionCategory.Correction, "Предел коррекции ошибок", $"{inspection.CorrectionCapacity:N0}");
-        var exceeded = inspection.Blocks.Count > 0 ? inspection.Blocks.Any(block => block.ExceedsCapacity) : inspection.DamagedCodewords > 0;
-        Add(InspectionCategory.Correction, "Лимит превышен", exceeded ? "Да" : "Нет");
+        if (inspection.Blocks.Count > 0)
+        {
+            Add(InspectionCategory.Codewords, "Повреждено / всего", $"{inspection.DamagedCodewords:N0} / {inspection.TotalCodewords:N0}");
+            var exceeded = inspection.Blocks.Any(block => block.ExceedsCapacity);
+            Add(InspectionCategory.Correction, "Лимит превышен", exceeded ? "Да" : "Нет");
+        }
         if (decoded?.ResultMetadata?.TryGetValue(ResultMetadataType.ERRORS_CORRECTED, out var corrected) == true && corrected is int count)
             Add(InspectionCategory.Correction, "Исправлено кодовых слов", $"{count:N0}");
         foreach (var block in inspection.Blocks)

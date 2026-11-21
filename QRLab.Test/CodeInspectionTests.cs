@@ -65,17 +65,15 @@ public sealed class CodeInspectionTests
     }
 
     [Theory]
-    [InlineData(BarcodeType.Ean13)]
-    [InlineData(BarcodeType.Code128)]
     [InlineData(BarcodeType.Pdf417)]
     public async Task EveryBarcodeHasObservedAndReconstructedMatrices(BarcodeType type)
     {
-        var sample = Create(BarcodeGenerationOptions.Create(type) with { Template = type == BarcodeType.Ean13 ? "590123412345" : "HELLO" });
+        var sample = Create(BarcodeGenerationOptions.Create(type) with { Template = "HELLO" });
         var result = await Read(sample);
         Assert.Equal(Status.Success, result.Status);
         var report = Assert.IsType<CodeInspection>(result.Inspection);
         Assert.NotNull(result.FinalBitmap);
-        Assert.Equal(0, report.DamagedCodewords);
+        Assert.Empty(report.Blocks);
         Assert.Equal(sample.OriginalBitmap!.Bits.ToArray(), report.Observed!.Bits.ToArray());
         Assert.Equal(type == BarcodeType.Pdf417 ? 4 : 0, report.CorrectionCapacity);
     }
@@ -86,8 +84,49 @@ public sealed class CodeInspectionTests
         var sample = Create(new Pdf417GenerationOptions());
         var result = await Read(Change(sample, cell => cell.Codeword == 2 && cell.Bit == 8));
         Assert.Equal(Status.Success, result.Status);
-        Assert.Equal(1, result.Inspection!.DamagedCodewords);
+        Assert.Empty(result.Inspection!.Blocks);
         Assert.NotNull(result.FinalBitmap);
+    }
+
+    [Fact]
+    public async Task Pdf417LocalStripeDamageReportsModulesWithoutEstimatingWordErrors()
+    {
+        var sample = Create(new Pdf417GenerationOptions());
+        var layout = sample.Layout!;
+        var firstScanlines = layout.Cells.Select((cell, index) => (cell, Y: index / layout.Width))
+            .Where(item => item.cell.Codeword >= 0).GroupBy(item => item.cell.Codeword)
+            .ToDictionary(group => group.Key, group => group.Min(item => item.Y));
+        var matrix = new Pdf417Encoder().Encode(sample.Content, sample.Settings);
+        for (var y = 0; y < layout.Height; y++)
+            for (var x = 0; x < layout.Width; x++)
+            {
+                var cell = layout[x, y];
+                if (cell.Codeword >= 0 && cell.Bit == 8 && y == firstScanlines[cell.Codeword]) matrix.flip(x, y);
+            }
+        var result = await Read(sample with
+        {
+            Frames = [new(new GaussianBlurOptions(), new CodeImageRenderer().Render(matrix, sample.Settings))]
+        });
+        Assert.Equal(Status.Success, result.Status);
+        Assert.True(result.Inspection!.Modules!.Changed > result.Inspection.CorrectionCapacity);
+        Assert.Empty(result.Inspection.Blocks);
+        Assert.Contains("Код прочитан", result.Inspection.Conclusion);
+        Assert.DoesNotContain("оценка", result.Inspection.Conclusion);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(4)]
+    [InlineData(8)]
+    public async Task Pdf417CorrectionLevelIsEncodedAndReported(int level)
+    {
+        var sample = Create(new Pdf417GenerationOptions { CorrectionLevel = level });
+        var result = await Read(sample);
+        Assert.Equal(Status.Success, result.Status);
+        Assert.Equal(1 << level, result.Inspection!.CorrectionCapacity);
+        Assert.Equal(0, result.Inspection.DamagedCodewords);
+        Assert.Contains(result.Inspection.Parameters, p => p.Name == "Уровень коррекции" && p.Value == level.ToString());
     }
 
     [Theory]
@@ -111,36 +150,22 @@ public sealed class CodeInspectionTests
     }
 
     [Fact]
-    public async Task Pdf417CountsAllDamagedWordsAgainstErrorCapacity()
+    public async Task Pdf417DoesNotEstimateWordDamageOrClaimCorrectionLimitExceeded()
     {
         var sample = Create(new Pdf417GenerationOptions());
         Assert.All(sample.Layout!.Cells.Where(cell => cell.Codeword >= 0), cell => Assert.Equal(0, cell.Block));
         var result = await Read(Change(sample, cell => cell.Codeword is >= 0 and < 5 && cell.Bit == 8));
         var report = result.Inspection!;
-        var block = Assert.Single(report.Blocks);
-        Assert.Equal(5, block.DamagedWords);
-        Assert.Equal(4, block.Capacity);
-        Assert.True(block.ExceedsCapacity);
-        Assert.Contains(report.Parameters, parameter => parameter.Name == "Блок 1 · повреждено / лимит / всего"
-            && parameter.Value == $"5 / 4 / {block.TotalWords:N0}");
+        Assert.Empty(report.Blocks);
+        Assert.True(report.Modules!.Changed > 0);
+        Assert.Equal(4, report.CorrectionCapacity);
+        Assert.DoesNotContain(report.Parameters, parameter => parameter.Name.Contains("Повреждено", StringComparison.OrdinalIgnoreCase)
+            || parameter.Name.Contains("оценк", StringComparison.OrdinalIgnoreCase)
+            || parameter.Name.Contains("Лимит превышен", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(report.Parameters, parameter => parameter.Name.Contains("стирани", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain("стирани", report.Conclusion, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Theory]
-    [InlineData(BarcodeType.Ean13)]
-    [InlineData(BarcodeType.Code128)]
-    public async Task LinearCodesReportChecksumFailureAndNoCorrectionCapability(BarcodeType type)
-    {
-        var sample = Create(BarcodeGenerationOptions.Create(type));
-        var result = await Read(Change(sample, cell => cell.Codeword == 0));
-        Assert.Equal(Status.Failed, result.Status);
-        Assert.NotNull(result.FinalBitmap);
-        Assert.Equal(1, result.Inspection!.DamagedCodewords);
-        Assert.Equal(0, result.Inspection.CorrectionCapacity);
-        Assert.Null(result.Inspection.Restored);
-        Assert.Contains("контрольной суммы", result.Inspection.Conclusion);
-    }
 
     [Fact]
     public async Task LostQrFinderIsReportedAsReferenceEstimateRatherThanDecoderEvidence()
@@ -155,7 +180,7 @@ public sealed class CodeInspectionTests
     }
 
     private static SamplePreview Create(GenerationOptions options) => Assert.Single(new CodeGenerator().CreateSamples(options with
-        { Template = options is Ean13GenerationOptions ? "590123412345" : "HELLO", Count = 1, Width = 768, Height = 512 }));
+        { Template = "HELLO", Count = 1, Width = 768, Height = 512 }));
 
     private static Task<RecognitionPreview> Read(SamplePreview sample) => ReadCore(sample);
     private static async Task<RecognitionPreview> ReadCore(SamplePreview sample) => Assert.Single(await new ZxingCodeRecognizer().RecognizeAsync(
@@ -163,7 +188,7 @@ public sealed class CodeInspectionTests
 
     private static SamplePreview Change(SamplePreview sample, Func<ModuleCell, bool> flip)
     {
-        CodeEncoder encoder = sample.Settings.Kind == CodeKind.QrCode ? new QrCodeEncoder() : new BarcodeEncoder();
+        CodeEncoder encoder = sample.Settings.Kind == CodeKind.QrCode ? new QrCodeEncoder() : new Pdf417Encoder();
         var matrix = encoder.Encode(sample.Content, sample.Settings);
         var border = sample.Settings.Kind == CodeKind.QrCode ? sample.Settings.QuietZone : 0;
         var layout = sample.Layout!;

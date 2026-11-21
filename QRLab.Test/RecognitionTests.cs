@@ -78,13 +78,9 @@ public sealed class RecognitionTests
     }
 
     [Theory]
-    [InlineData(CodeKind.QrCode, BarcodeType.Code128, "Привет, ZXing", 360, 360)]
-    [InlineData(CodeKind.Barcode, BarcodeType.Ean13, "590123412345", 360, 360)]
-    [InlineData(CodeKind.Barcode, BarcodeType.Code128, "LAB-012345", 360, 360)]
+    [InlineData(CodeKind.QrCode, BarcodeType.Pdf417, "Привет, ZXing", 360, 360)]
     [InlineData(CodeKind.Barcode, BarcodeType.Pdf417, "PDF417 текст", 360, 360)]
-    [InlineData(CodeKind.QrCode, BarcodeType.Code128, "Привет, ZXing", 768, 512)]
-    [InlineData(CodeKind.Barcode, BarcodeType.Ean13, "590123412345", 768, 512)]
-    [InlineData(CodeKind.Barcode, BarcodeType.Code128, "LAB-012345", 768, 512)]
+    [InlineData(CodeKind.QrCode, BarcodeType.Pdf417, "Привет, ZXing", 768, 512)]
     [InlineData(CodeKind.Barcode, BarcodeType.Pdf417, "PDF417 текст", 768, 512)]
     public async Task ReadsActualPngForEachSupportedCode(CodeKind kind, BarcodeType type, string content, int width, int height)
     {

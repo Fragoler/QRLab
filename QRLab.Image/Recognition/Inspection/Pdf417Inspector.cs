@@ -4,7 +4,6 @@ using QRLab.Core.Models.Recognition;
 using QRLab.Core.Models.Samples;
 using ZXing;
 using ZXing.Common;
-using ZXing.PDF417;
 
 namespace QRLab.Image.Recognition.Inspection;
 
@@ -14,90 +13,54 @@ internal sealed class Pdf417Inspector : CodeInspector
 
     public override CodeLayout CreateLayout(BinaryImage original, GenerationOptions settings)
     {
-        var bounds = Bounds(original);
-        var rows = RowRanges(original);
-        var columns = (bounds.Right - bounds.Left + 1 - 69) / 17;
-        var cells = Enumerable.Repeat(new ModuleCell(ModuleRole.QuietZone), original.Width * original.Height).ToArray();
-        for (var row = 0; row < rows.Count; row++)
-            for (var y = rows[row].Top; y <= rows[row].Bottom; y++)
-                for (var x = bounds.Left; x <= bounds.Right; x++)
-                {
-                    var offset = x - bounds.Left;
-                    cells[y * original.Width + x] = offset < 17 || offset >= 51 + columns * 17 ? new(ModuleRole.Guard)
-                        : offset < 34 || offset >= 34 + columns * 17 ? new(ModuleRole.RowIndicator)
-                        : new(ModuleRole.Data, row * columns + (offset - 34) / 17, (offset - 34) % 17) { Block = 0 };
-                }
-        return new(original.Width, original.Height, cells);
+        return Pdf417Structure.Read(original).CreateLayout();
     }
 
     public override CodeInspection Inspect(SamplePreview sample, BitMatrix raster, Result? decoded, BinaryImage? detected)
     {
         var original = sample.OriginalBitmap!;
-        var layout = CreateLayout(original, sample.Settings);
+        var structure = Pdf417Structure.Read(original);
+        var layout = structure.CreateLayout();
         var probe = Probe(sample, raster);
-        var observed = Capture(sample, raster);
+        var observed = Capture(sample, structure);
         var compared = observed ?? probe;
-        var bounds = Bounds(original);
-        var rows = RowRanges(original);
-        var columns = (bounds.Right - bounds.Left + 1 - 69) / 17;
-        var levelWord = ReadPattern(original, bounds.Left + 17, (rows[1].Top + rows[1].Bottom) / 2);
-        var levelValue = Pdf417Symbols.Decode(levelWord);
-        var level = levelValue >= 0 ? levelValue % 30 / 3 : 2;
-        var parity = 1 << (level + 1);
-        var damaged = DamagedWords(original, compared, layout);
-        var totalWords = rows.Count * columns;
-        var block = new CorrectionBlock(1, damaged.Count, totalWords, parity);
-        var conclusion = $"PDF417, EC {level}: повреждено {damaged.Count} из {totalWords} слов. "
-            + $"Предел коррекции ошибок: {block.Capacity} кодовых слов.";
-        if (block.ExceedsCapacity) conclusion += " Расчётная граница коррекции превышена.";
+        var level = structure.CorrectionLevel;
+        var parity = structure.CorrectionWords;
+        var totalWords = structure.Words.Count;
+        var conclusion = $"PDF417, EC {level}: {totalWords} кодовых слов. "
+            + $"Один общий блок Reed–Solomon, {parity} проверочных слов. Предел коррекции ошибок: {parity / 2} кодовых слов.";
+        if (decoded is not null) conclusion += " Код прочитан декодером.";
         if (observed is null) conclusion += " " + ReferenceWarning;
-        else if (decoded is null) conclusion += " Границы найдены; отказ возможен при чтении индикаторов строк, кодовых слов или коррекции. Эти этапы стандартный API не различает.";
+        else if (decoded is null) conclusion += " Границы найдены, но отказано в чтении строк";
         return new("PDF417", layout, observed, probe, null,
-            observed is null ? ReferenceWarning : "Границы найдены PDF417-детектором; для учебной выборки используются число строк и ширина известного образца.",
-            "",
-            conclusion, Damage(original, compared, layout), [block], damaged.Count, totalWords, parity / 2)
+            conclusion, Damage(original, compared, layout), [], 0, totalWords, parity / 2)
         {
             Basis = observed is null ? InspectionBasis.ReferenceGrid : InspectionBasis.DetectorBounds,
-            Parameters = [new(InspectionCategory.Symbol, "Строки / столбцы", $"{rows.Count} / {columns}"),
-                new(InspectionCategory.Correction, "Уровень коррекции", level.ToString())]
+            Parameters = [new(InspectionCategory.Symbol, "Строки / столбцы", $"{structure.Rows.Count} / {structure.Columns}"),
+                new(InspectionCategory.Codewords, "Кодовые слова - данные", structure.DataWords.ToString()),
+                new(InspectionCategory.Codewords, "Кодовые слова - коррекция", structure.CorrectionWords.ToString()),
+                new(InspectionCategory.Correction, "Уровень коррекции", level.ToString()),
+                new(InspectionCategory.Correction, "Проверочных слов", parity.ToString()),
+                new(InspectionCategory.Correction, "Блоков", "1")]
         };
     }
 
-    private static BinaryImage? Capture(SamplePreview sample, BitMatrix raster)
+    private static BinaryImage? Capture(SamplePreview sample, Pdf417Structure structure)
     {
         var bitmap = new BinaryBitmap(new HybridBinarizer(BitmapReader.ReadLuminance(sample.Frames.LastOrDefault()?.Image ?? sample.Image)));
         var detection = ZXing.PDF417.Internal.Detector.detect(bitmap, null, false);
         var points = detection?.Points.FirstOrDefault();
         if (points is not { Length: >= 4 } || points.Take(4).Any(point => point is null)) return null;
         var original = sample.OriginalBitmap!;
-        var bounds = Bounds(original);
         var matrix = detection!.Bits;
         return Build(original.Width, original.Height, (x, y) =>
         {
-            var u = (x - bounds.Left + .5) / (bounds.Right - bounds.Left + 1);
-            var v = (y - bounds.Top + .5) / (bounds.Bottom - bounds.Top + 1);
+            var point = structure.ToCanonical(x, y);
+            var u = (point.X - structure.Left + .5) / structure.SymbolWidth;
+            var v = (point.Y - structure.Top + .5) / structure.SymbolHeight;
             var px = (1 - u) * ((1 - v) * points[0].X + v * points[1].X) + u * ((1 - v) * points[2].X + v * points[3].X);
             var py = (1 - u) * ((1 - v) * points[0].Y + v * (points[1].Y + 1)) + u * ((1 - v) * points[2].Y + v * (points[3].Y + 1));
             return matrix[Math.Clamp((int)px, 0, matrix.Width - 1), Math.Clamp((int)py, 0, matrix.Height - 1)];
         });
-    }
-
-    private static List<(int Top, int Bottom)> RowRanges(BinaryImage original)
-    {
-        var bounds = Bounds(original);
-        var result = new List<(int, int)>();
-        var start = bounds.Top;
-        for (var y = bounds.Top + 1; y <= bounds.Bottom; y++)
-            if (Enumerable.Range(bounds.Left, bounds.Right - bounds.Left + 1).Any(x => original[x, y] != original[x, y - 1]))
-            { result.Add((start, y - 1)); start = y; }
-        result.Add((start, bounds.Bottom));
-        return result;
-    }
-
-    private static int ReadPattern(BinaryImage image, int left, int y)
-    {
-        var value = 0;
-        for (var x = 0; x < 17; x++) value = (value << 1) | (image[left + x, y] ? 1 : 0);
-        return value;
     }
 }
