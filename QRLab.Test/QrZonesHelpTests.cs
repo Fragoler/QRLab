@@ -30,17 +30,21 @@ public sealed class QrZonesHelpTests
         {
             window.Show(); vm.NavigateCommand.Execute("04"); Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
             var button = window.GetVisualDescendants().OfType<HoldButton>().Single();
-            button.HoldDuration = TimeSpan.FromMilliseconds(500);
+            // Keep the hold pending while waiting for a UI timer tick, even on a busy runner.
+            button.HoldDuration = TimeSpan.FromSeconds(30);
             var point = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)!.Value;
             window.MouseDown(point, MouseButton.Left);
-            await Task.Delay(100); Dispatcher.UIThread.RunJobs();
-            Assert.InRange(button.HoldProgress, .01, .99);
+            await WaitUntil(() => button.HoldProgress > 0);
+            Assert.InRange(button.HoldProgress, double.Epsilon, .99);
             Assert.False(vm.Comparison.IsQrHelpOpen);
             var fill = button.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "QrLegendHoldFill");
             Assert.Equal(button.HoldProgress, Assert.IsType<ScaleTransform>(fill.RenderTransform).ScaleY);
             Assert.Equal(new RelativePoint(.5, 1, RelativeUnit.Relative), fill.RenderTransformOrigin);
-            await Task.Delay(550); Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            button.HoldDuration = TimeSpan.FromMilliseconds(1);
+            await WaitUntil(() => vm.Comparison.IsQrHelpOpen);
+            window.UpdateLayout();
             Assert.True(vm.Comparison.IsQrHelpOpen);
+            button.HoldDuration = TimeSpan.FromSeconds(30);
             var overlay = window.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "QrZonesHelpOverlay");
             Assert.True(overlay.IsEffectivelyVisible);
             Assert.False(ToolTip.GetIsOpen(button));
@@ -97,13 +101,14 @@ public sealed class QrZonesHelpTests
         {
             window.Show(); vm.NavigateCommand.Execute("04"); Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
             var button = window.GetVisualDescendants().OfType<HoldButton>().Single();
-            button.HoldDuration = TimeSpan.FromMilliseconds(250);
+            button.HoldDuration = TimeSpan.FromSeconds(30);
             var point = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)!.Value;
             window.MouseDown(point, MouseButton.Left);
-            await Task.Delay(70); Dispatcher.UIThread.RunJobs();
+            await WaitUntil(() => button.HoldProgress > 0);
             Assert.True(button.HoldProgress > 0);
             var outside = point + new Vector(-60, 0);
             window.MouseMove(outside);
+            button.HoldDuration = TimeSpan.FromMilliseconds(1);
             await Task.Delay(300); Dispatcher.UIThread.RunJobs();
             Assert.Equal(0, button.HoldProgress); Assert.False(vm.Comparison.IsQrHelpOpen);
             window.MouseUp(outside, MouseButton.Left);
@@ -112,10 +117,12 @@ public sealed class QrZonesHelpTests
             Assert.Equal(0, button.HoldProgress); Assert.False(vm.Comparison.IsQrHelpOpen);
             window.MouseUp(point, MouseButton.Right);
             Assert.False(Assert.IsType<Flyout>(button.Flyout).IsOpen);
+            button.HoldDuration = TimeSpan.FromSeconds(30);
             window.MouseDown(point, MouseButton.Left);
-            await Task.Delay(70); Dispatcher.UIThread.RunJobs();
+            await WaitUntil(() => button.HoldProgress > 0);
             window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
             window.KeyRelease(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+            button.HoldDuration = TimeSpan.FromMilliseconds(1);
             await Task.Delay(300); Dispatcher.UIThread.RunJobs();
             window.MouseUp(point, MouseButton.Left);
             Assert.Equal(0, button.HoldProgress); Assert.False(vm.Comparison.IsQrHelpOpen);
@@ -145,11 +152,13 @@ public sealed class QrZonesHelpTests
             window.MouseDown(background, MouseButton.Left); window.MouseUp(background, MouseButton.Left);
             Assert.False(vm.Comparison.IsQrHelpOpen);
             var button = window.GetVisualDescendants().OfType<HoldButton>().Single();
-            button.HoldDuration = TimeSpan.FromMilliseconds(200);
+            button.HoldDuration = TimeSpan.FromSeconds(30);
             Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
             var point = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)!.Value;
             window.MouseDown(point, MouseButton.Left);
+            await WaitUntil(() => button.HoldProgress > 0);
             vm.NavigateCommand.Execute("01"); Dispatcher.UIThread.RunJobs();
+            button.HoldDuration = TimeSpan.FromMilliseconds(1);
             await Task.Delay(300); Dispatcher.UIThread.RunJobs();
             window.MouseUp(point, MouseButton.Left);
             Assert.False(vm.Comparison.IsQrHelpOpen); Assert.Equal(0, button.HoldProgress);
@@ -162,5 +171,16 @@ public sealed class QrZonesHelpTests
             Assert.False(window.GetVisualDescendants().OfType<HoldButton>().Single().IsEffectivelyEnabled);
         }
         finally { window.Close(); }
+    }
+
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        var timeout = System.Diagnostics.Stopwatch.StartNew();
+        while (!condition() && timeout.Elapsed < TimeSpan.FromSeconds(5))
+        {
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+            Dispatcher.UIThread.RunJobs();
+        }
+        Assert.True(condition(), "UI condition was not reached within five seconds.");
     }
 }
